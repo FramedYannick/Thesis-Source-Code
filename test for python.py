@@ -4,7 +4,13 @@ import tkinter as tk						#for GUI
 import numpy as np
 
 dic, data = ng.bruker.read_pdata(r"D:\DATA\master2016\Test\3\pdata\1")
+peaks = ng.peakpick.pick(data, (0.05), diag=False, cluster=True)
 
+y = 0
+for x in data:
+    if max(x) >y:
+        y = max(x)
+print(y)
 
-File = open(r"C:\Users\Yannick\Documents\_Documenten\UGent\Thesis\text.txt",'a')
-File.write(str(dic))
+#File = open(r"C:\Users\Yannick\Documents\_Documenten\UGent\Thesis\text.txt",'a')
+#File.write(str(dic) + "\n \n\n\n\n\n\n\n\n" + str(peaks))
