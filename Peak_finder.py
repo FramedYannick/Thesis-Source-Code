@@ -24,13 +24,13 @@ def peaker (dir):
     SW_hz = float(dic['procs']['SW_p'])
 
     # peak picking
-    peaks = ng.peakpick.pick(data, (data.max() * config.Default_Threshhold), diag=False, cluster=True)
+    peaks = ng.peakpick.pick(data, (data.max() * config.Default_Threshold), diag=False, cluster=True)
 
     # ppm conversion
     SW_ppm = SW_hz / B0_hz
     SO1_ppm = SO1_hz / B0_hz
     (xcorr_ppm, ycorr_ppm) = pw.fn_peak_corrector(peaks, data, B0_hz)
-    peaks_ppm = pw.fn_peak_ppm(peaks, SW_ppm, len(data), xcorr_ppm, ycorr_ppm)
+    peaks_ppm = pw.fn_peak_ppm(peaks, SW_ppm, SO1_ppm, len(data), len(data[0]), xcorr_ppm, ycorr_ppm) #correction should no longer be required
     print("parameters: b0: %f so1_hz: %f So1_ppm: %f SW_hz: %f Sw_ppm: %f" % (B0_hz, SO1_hz, SO1_ppm, SW_hz, SW_ppm))
     print(peaks_ppm)
 

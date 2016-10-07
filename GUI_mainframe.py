@@ -39,8 +39,8 @@ class app_tk(tk.Tk):
         label.grid(column=0,row=2,columnspan=4,sticky="EW")
 
         #analyse present peaks.xml
-        buttons = tk.Button(self, text=u"Analyse Peaks", command=self.OnButtonClicks)
-        buttons.grid(column=4, row=8)
+        button3 = tk.Button(self, text=u"Analyse Peaks", command=self.OnButtonClick3)
+        button3.grid(column=4, row=7)
 
         #custom settings button
         buttons = tk.Button(self, text=u"Settings", command=self.OnButtonClicks)
@@ -63,8 +63,8 @@ class app_tk(tk.Tk):
         dir = filedialog.askdirectory(initialdir=dir)
         self.labelVariable1.set("current directory:  " + dir)
         #check for the xml file
-        from Read_data import fn_check_xml as check_xml
-        if (check_xml(dir)):
+        from Read_data import fn_check_dir as check_dir
+        if (check_dir(dir, "peaklist.xml")):
             self.labelVariable2.set("Use BRUKER peaks or custom find.")
         else:
             self.labelVariable2.set("No peaks found - use Topspin or custom peaks")
@@ -79,14 +79,27 @@ class app_tk(tk.Tk):
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
+    def OnButtonClick3(self):
+        print('starting analysis')
+        import Read_data as rd
+        import Peak_writer as pw
+        peaks_ppm = rd.fn_read_xml(dir)
+        peaklist = rd.fn_sort_peaks(peaks_ppm, dir)
+        pw.fn_peak_plotter(dir,peaklist)
+        self.entry.focus_set()
+        self.entry.selection_adjust(0)
+
     def OnButtonClicks (self):
         import subprocess
         subprocess.call(['notepad.exe','config.py'])                    #might change to proper GUI later
+        import config
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
     def OnPressEnter(self,event):
-        self.labelVariable1.set("enter")
+        entry = self.entry.get()
+        self.entry.delete(0,'end')
+        exec(entry)
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
