@@ -12,7 +12,6 @@ def fn_read_xml(dir):                     #read in peaks from xml
 	peaks_ppm = []
 	for x in itemlist:
 		peaks_ppm.append([float(x.attributes['F1'].value), float(x.attributes['F2'].value), float(x.attributes['intensity'].value)])
-	print(len(peaks_ppm))
 	return (peaks_ppm)
 
 
@@ -84,8 +83,6 @@ def fn_sort_peaks (peaks_ppm,dir):				#list of peaks; each peak is list [x, y, i
 				peak = [x[1], x[0], x[2]]
 				peaks_ppm_cross_top.append(peak)
 		peaks_ppm_cross_bot += peaks_ppm_cross_temp
-		from Peak_writer import fn_peak_xml
-		fn_peak_xml(peaks_ppm_diag + peaks_ppm_cross_top + peaks_ppm_cross_bot, dir)
 
 	#correct for artefacts around the alpha and for dup/triplets
 	if config.Default_artefacts:

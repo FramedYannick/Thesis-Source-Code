@@ -16,7 +16,7 @@ Default_dpi = 350                                           #defines max zoom; n
 #processing parameters
 Default_Plotting = True                                     #true will create plot inside the proc. directory
 Default_Sugar_ARange = [3.8,10]                             #ppm range for alpha-hydrogen - INCORRECT
-Default_copy = True                                         #should top half be copied on bottom for missed peaks
+Default_copy = False                                        #should top half be copied on bottom for missed peaks
 															#this is time intensitive; and should not be done with low F2 resolution
 Default_artefacts = False                                   #is compensation for artefacts and duplets
 
