@@ -8,6 +8,8 @@ import config
 from Peak_writer import fn_peak_xml
 from Peak_writer import fn_peak_plotter
 
+
+
 class app_tk(tk.Tk):
     def __init__(self,parent):
         tk.Tk.__init__(self,parent)
@@ -19,11 +21,11 @@ class app_tk(tk.Tk):
         dir = config.Default_Directory
         self.grid()
         self.entry = tk.Entry(self)
-        self.entry.grid(column=0,row=0,sticky='EW')
+        self.entry.grid(column=0,row=0,columnspan=4,sticky='EW')
         self.entry.bind("<Return>", self.OnPressEnter)
 
         #browse button
-        button = tk.Button(self,text=u"Browse",command=self.OnButtonClick1)
+        button = tk.Button(self,text=u"Browse",command=self.OnButtonBrowse)
         button.grid(column=4,row=1)
         #browse label
         self.labelVariable1 = tk.StringVar()
@@ -31,21 +33,20 @@ class app_tk(tk.Tk):
         label = tk.Label(self,textvariable=self.labelVariable1,anchor="w",fg="white",bg="blue")
         label.grid(column=0,row=1,columnspan=4,sticky="EW")
 
-        #custom peak finder button
-        button2 = tk.Button(self,text=u"Custom peaks?",command=self.OnButtonClick2)
-        button2.grid(column=4,row=2)
+        #read data
+        buttonread = tk.Button(self,text=u"Read Peaks",command=self.OnButtonRead)
+        buttonread.grid(column=4,row=2)
         #custom peak finder label
-        self.labelVariable2 = tk.StringVar()
-        self.labelVariable2.set("No peaks found yet.")
-        label = tk.Label(self,textvariable=self.labelVariable2,anchor="w",fg="white",bg="blue")
-        label.grid(column=0,row=2,columnspan=4,sticky="EW")
-
-        #analyse present peaks.xml
-        button3 = tk.Button(self, text=u"Analyse Peaks", command=self.OnButtonClick3)
-        button3.grid(column=4, row=7)
+        self.labelVariableRead = tk.StringVar()
+        if "pdata" not in dir:
+            self.labelVariableRead.set("Please select your working Directory")
+        else:
+            self.labelVariableRead.set("Ready to read preprocessed data...")
+        label = tk.Label(self,textvariable=self.labelVariableRead,anchor="w",fg="white",bg="blue")
+        label.grid(column=0,row=4,columnspan=4,rowspan=4,sticky="EW")
 
         #custom settings button
-        buttons = tk.Button(self, text=u"Settings", command=self.OnButtonClicks)
+        buttons = tk.Button(self, text=u"Settings", command=self.OnButtonSettings)
         buttons.grid(column=4, row=8)
 
 
@@ -57,7 +58,12 @@ class app_tk(tk.Tk):
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
-    def OnButtonClick1(self):                                           #browse button to get correct dir
+        for x in range(4):
+            self.grid_columnconfigure(x, weight=1,uniform='foo')
+        global printlabel
+        printlabel = self.labelVariableRead
+
+    def OnButtonBrowse(self):                                           #browse button to get correct dir
         from tkinter import filedialog
         root = tk.Tk()
         root.withdraw()
@@ -66,39 +72,26 @@ class app_tk(tk.Tk):
         self.labelVariable1.set("current directory:  " + dir)
         #check for the xml file
         from Read_data import fn_check_dir as check_dir
-        if (check_dir(dir, "peaklist.xml")):
-            self.labelVariable2.set("Use BRUKER peaks or custom find.")
+        if "pdata" not in dir:
+            self.labelVariableRead.set("Please use xf2; apk and abs preprocessed data from topspin...")
         else:
-            self.labelVariable2.set("No peaks found - use Topspin or custom peaks")
-
+            self.labelVariableRead.set("Ready to read preprocessed data...")
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
-    def OnButtonClick2 (self):
-        import Peak_finder as pf
-        result = pf.peaker(dir)
-        self.labelVariable2.set("Using Custom peaks from NMRGlue")
-        self.entry.focus_set()
-        self.entry.selection_adjust(0)
-
-    def OnButtonClick3(self):
-        print('starting analysis')
+    def OnButtonRead(self):
+        print('not doing good')
         import Read_data as rd
-        peaks_ppm = rd.fn_read_xml(dir)
-        peaklist = rd.fn_sort_peaks(peaks_ppm, dir)
-        fn_peak_plotter(dir,peaklist)
-        list = []
-        for x in peaklist:
-            list += x
-        print(list)
-        fn_peak_xml(list,dir)
+        rd.fn_read_data(dir,self.labelVariableRead)
+        #############################################################################CODE CALL
+
+        self.labelVariableRead.set("Reading DATA")
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
-    def OnButtonClicks (self):
+    def OnButtonSettings(self):
         import subprocess
         subprocess.call(['notepad.exe','config.py'])                    #might change to proper GUI later
-        import config
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
@@ -108,9 +101,6 @@ class app_tk(tk.Tk):
         exec(entry)
         self.entry.focus_set()
         self.entry.selection_adjust(0)
-
-
-
 
 if __name__ == "__main__":
     app = app_tk(None)
