@@ -1,7 +1,6 @@
 #Peak writer for xml extraxtion towards processed spectra
 
 def fn_peak_xml (peaks_ppm, dir):   #peaks is list of tuples!!!
-    print(dir)
     dir_file = dir + r"\peaklist.xml"
     write = open(dir_file, 'w')
     write.writelines('<?xml version="1.0" encoding="UTF-8"?>\n<PeakList modified="2016-09-26T16:37:16">\n  <PeakList2D>\n    <PeakList2DHeader creator="ind assignment@studentpc4-PC" date="2015-02-19T15:11:12" expNo="4" name="BaPr_minor17" owner="ind assignment" procNo="1" source="C:/data/bach2015/nmr">\n      <PeakPickDetails>\n	</PeakPickDetails>\n    </PeakList2DHeader>')
@@ -20,7 +19,7 @@ def fn_peak_xml (peaks_ppm, dir):   #peaks is list of tuples!!!
     write.writelines("  </PeakList2D>\n</PeakList>")
     return
 
-def fn_peak_ppm (peaks, SW_pmm, SO1_ppm, data_lenx, data_leny, xcorr_ppm=0, ycorr_ppm=0):
+def fn_peak_ppm (peaks, SW_pmm, SO1_ppm, data_lenx, data_leny):
     peaks2 = []
     y = 0
     for x in peaks:
@@ -35,21 +34,6 @@ def fn_peaks_ppm_plot_converter (peaks_ppm):
         peaksx.append(x[0])
         peaksy.append(x[1])
     return [peaksx, peaksy]
-
-def fn_peak_corrector (peaks, data, B0_hz):         #temp correction till i find actual cause
-    xcorr_ppm, ycorr_ppm = 0,0
-    #xcorr_ppm = len(data)*-0.0002449
-    #ycorr_ppm = len(data[0])*-0.0002449
-    """
-    import numpy as np
-    (x, y) = np.unravel_index(data.argmax(), data.shape)
-    (x_p, y_p, a, b, c, d) = sorted(peaks, key=lambda x: x[5], reverse=True)[0]
-    print("max intensity x channel: %f and %f" %(data[x][y], d))
-    xcorr_ppm = 0 #(x - x_p)/B0_hz
-    ycorr_ppm = 0 #(y - y_p)/B0_hz
-    print("correction is " + str(xcorr_ppm) + "and" + str(ycorr_ppm))
-    """
-    return xcorr_ppm, ycorr_ppm
 
 def fn_data_plotter (dir, data, peaks_ppm, SW_ppm, SO1_ppm):
     import matplotlib.pyplot as plt  # for plotting

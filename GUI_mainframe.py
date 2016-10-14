@@ -5,6 +5,8 @@ GUI designed by Dandois for a mainframe around the python processing module
 
 import tkinter as tk
 import config
+from Peak_writer import fn_peak_xml
+from Peak_writer import fn_peak_plotter
 
 class app_tk(tk.Tk):
     def __init__(self,parent):
@@ -82,10 +84,14 @@ class app_tk(tk.Tk):
     def OnButtonClick3(self):
         print('starting analysis')
         import Read_data as rd
-        import Peak_writer as pw
         peaks_ppm = rd.fn_read_xml(dir)
         peaklist = rd.fn_sort_peaks(peaks_ppm, dir)
-        pw.fn_peak_plotter(dir,peaklist)
+        fn_peak_plotter(dir,peaklist)
+        list = []
+        for x in peaklist:
+            list += x
+        print(list)
+        fn_peak_xml(list,dir)
         self.entry.focus_set()
         self.entry.selection_adjust(0)
 
