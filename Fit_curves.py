@@ -138,4 +138,4 @@ def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, printlabel):
         fn_plot_data(vclist, info)
     update_GUI("Ready to process all peaks.", printlabel)
 
-
+    return info,vclist

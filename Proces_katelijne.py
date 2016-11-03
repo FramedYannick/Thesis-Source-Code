@@ -4,6 +4,9 @@ def katelijne(printlabel):
 	import matplotlib.pyplot as plt				#for plotting
 	import tkinter as tk						#for GUI
 	import numpy as np
+	import pickle
+
+	database = []
 
 	sugar_list = [["glualpha", r"D:\DATA\Katelijne2011\glucose_700", [21,22,23,24,25,26,27,28,29,30]], ["glubeta", r"D:\DATA\Katelijne2011\glucose_700", [41,42,43,44,45,46,47,48,49,50]], ["rhamalpha", r"D:\DATA\Katelijne2011\rhamnose_700", [3,4,5,6,7,8,9,10,11,12]], ["rhambeta", r"D:\DATA\Katelijne2011\rhamnose_700", [23,24,25,26,27,28,29,30,31,32]], ["galalpha", r"D:\DATA\Katelijne2011\galactose_700", [3,4,5,6,7,8,9,10,11,12]], ["galbeta", r"D:\DATA\Katelijne2011\galactose_700", [23,24,25,26,27,28,29,30,31,32]], ["manalpha", r"D:\DATA\Katelijne2011\mannose_700", [3,4,5,6,7,8,9,10,11,12]], ["manbeta", r"D:\DATA\Katelijne2011\mannose_700", [23,24,25,26,27,28,29,30,31,32]]]
 	for sugar_id in sugar_list:
@@ -45,4 +48,18 @@ def katelijne(printlabel):
 			print(sugar)
 			print('------')
 		(vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data2, SW_ppm, SO1_ppm, printlabel)
-		fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, printlabel)
+		info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, printlabel)
+		info[0] = sugar
+		database.append(info)
+
+	#create the database dump file
+	import pickle
+	from config import Database_Directory
+	pickle.dump(database, open(Database_Directory + r"\Database.p","wb"))
+
+	#temporary add an extra txt file
+	file = open(Database_Directory + r"\Database.txt", "a")
+	for x in database:
+		file.write(str(x) + "\n")
+
+

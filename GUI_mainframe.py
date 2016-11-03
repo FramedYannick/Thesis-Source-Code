@@ -39,7 +39,7 @@ class app_tk(tk.Tk):
         label.grid(column=0,row=1,columnspan=4,sticky="EW")
 
         #read data
-        buttonread = tk.Button(self,text=u"Read Peaks",command=self.OnButtonRead)
+        buttonread = tk.Button(self,text=u"Analyse spectra",command=self.OnButtonRead)
         buttonread.grid(column=4,row=2)
         #custom peak finder label
         self.labelVariableRead = tk.StringVar()
@@ -94,7 +94,10 @@ class app_tk(tk.Tk):
         update_GUI("Reading DATA",printlabel)
         (vclist, data, SW_ppm, SO1_ppm) = rd.fn_read_data(dir,printlabel)
         (vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel)
-        fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, printlabel)
+        info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, printlabel)
+        import Check_database as cd
+        cd.Check_database(info,vclist)
+
 
         #############################################################################CODE CALL
         self.entry.focus_set()

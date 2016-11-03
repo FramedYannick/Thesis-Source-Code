@@ -107,7 +107,13 @@ def fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel):
 		peak_ind_ppm.append(((len(data[0])-x)/len(data[0])*SW_ppm)+(SO1_ppm-0.5*SW_ppm))
 		temp = []
 		for row in data:
-			temp.append(row[x])
+			if config.Default_mode:
+				#use the integral of the function - stepwize: 1. find boundries; 2. use trapz to achieve intensity; 3. fit curves will normalize anyway
+				if config.Default_show:
+					print("integral mode is not operatable yet")
+				temp.append(row[x])
+			else:
+				temp.append(row[x])
 		peaks_value_list.append(temp)
 	return(vclist,peaks_value_list, peak_ind_ppm)     #list of mixing times, list of colums with intensities, list of ppm values of each decay listed
 
