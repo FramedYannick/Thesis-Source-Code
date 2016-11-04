@@ -34,6 +34,7 @@ def fn_read_data(dir,printlabel):
 	SW_hz = float(dic['procs']['SW_p'])
 	SW_ppm = SW_hz / B0_hz
 	SO1_ppm = SO1_hz / B0_hz
+	duplet_ppm = 14/B0_hz
 
 	#collect the list type parameter (should be changed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
 	vclist = []
@@ -55,7 +56,7 @@ def fn_read_data(dir,printlabel):
 			for y in range(abs(temp[x] - zeromax)):
 				data[x] = np.delete(data[x],0)
 				data.append(0.)
-	return vclist, data, SW_ppm, SO1_ppm
+	return vclist, data, SW_ppm, SO1_ppm, duplet_ppm
 
 
 

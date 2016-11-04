@@ -39,6 +39,7 @@ def katelijne(printlabel):
 		SW_hz = float(dic['procs']['SW_p'])
 		SW_ppm = SW_hz / B0_hz
 		SO1_ppm = SO1_hz / B0_hz
+		duplet_ppm = 14/B0_hz
 
 		import Read_data as rd
 		import Fit_curves as fc
@@ -48,7 +49,7 @@ def katelijne(printlabel):
 			print(sugar)
 			print('------')
 		(vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data2, SW_ppm, SO1_ppm, printlabel)
-		info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, printlabel)
+		info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel)
 		info[0] = sugar
 		database.append(info)
 
@@ -60,6 +61,6 @@ def katelijne(printlabel):
 	#temporary add an extra txt file
 	file = open(Database_Directory + r"\Database.txt", "a")
 	for x in database:
-		file.write(str(x) + "\n")
+		file.write(str(x[0:2]) + "\n")
 
 

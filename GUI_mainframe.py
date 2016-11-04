@@ -92,9 +92,9 @@ class app_tk(tk.Tk):
         import Read_data as rd
         import Fit_curves as fc
         update_GUI("Reading DATA",printlabel)
-        (vclist, data, SW_ppm, SO1_ppm) = rd.fn_read_data(dir,printlabel)
+        (vclist, data, SW_ppm, SO1_ppm, duplet_ppm) = rd.fn_read_data(dir,printlabel)
         (vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel)
-        info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, printlabel)
+        info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel)
         import Check_database as cd
         cd.Check_database(info,vclist)
 

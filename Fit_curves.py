@@ -41,7 +41,7 @@ def fn_SSD (listA, listB=[]):
 
 
 ################################################################################ MAIN FUNCTION
-def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, printlabel):
+def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel):
     from GUI_mainframe import update_GUI
     import numpy as np
     from scipy.optimize import curve_fit
@@ -88,43 +88,32 @@ def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, printlabel):
             temp_info = {'data': temp_decay, 'ppm': temp_ppm,'duplet': False}
             info[2].append(temp_info)
 
-    #duplet filtering - H1
-    remove = []
-    for x in range(len(info[1])):
-        for y in range(x+1,len(info[1])):
-            SSD = fn_SSD(info[1][x]['data'], info[1][y]['data'])
-            D_ppm = abs(info[1][y]['ppm']-info[1][x]['ppm'])
-            D_drop = abs(info[1][y]['curve']['drop']-info[1][x]['curve']['drop'])
-            if SSD < 0.05 and D_ppm < 0.01 and D_drop < 0.10:
-                remove.append(y)
-                info[1][x]['duplet'] = True
-                info[1][y]['duplet'] = True
-                info[1][x]['duplet_SSD'] = SSD
-                info[1][x]['duplet_DATA'] = info[1][y]
-    remove = sorted(remove, reverse=True)
-    if config.Default_show:
-        print("removing H1-peaks: %s" %str(len(remove)))
-    for x in remove:
-        info[1].pop(x)
-
-    #duplet filtering - other H
-    remove = []
-    for x in range(len(info[2])):
-        for y in range(x+1,len(info[2])):
-            SSD = fn_SSD(info[2][x]['data'], info[2][y]['data'])
-            D_ppm = abs(info[2][y]['ppm']-info[2][x]['ppm'])
-            if SSD < 0.05 and D_ppm < 0.01:
-                remove.append(y)
-                info[2][x]['duplet'] = True
-                info[2][y]['duplet'] = True
-                info[2][x]['duplet_SSD'] = SSD
-                info[2][x]['duplet_DATA'] = info[2][y]
-    remove = sorted(remove, reverse=True)
-    if config.Default_show:
-        print("removing non H1-pekas: %s" %str(len(remove)))
-    for x in remove:
-        info[2].pop(x)
-
+    #duplet filtering
+    for z in [1,2]:
+        remove = []
+        for x in range(len(info[z])):
+            for y in range(x+1,len(info[z])):
+                #SSD = fn_SSD(info[z][x]['data'], info[z][y]['data'])
+                SSD = np.corrcoef(info[z][x]['data'], info[z][y]['data'])[0][1]
+                D_ppm = abs(info[z][y]['ppm']-info[z][x]['ppm'])
+                if z == 1:
+                    D_drop = abs(info[z][y]['curve']['drop']-info[z][x]['curve']['drop'])
+                else:
+                    D_drop = 0.5
+                if abs(SSD) > 0.9 and D_ppm < duplet_ppm and D_drop < 0.10:
+                    remove.append(y)
+                    info[z][x]['duplet'] = True
+                    info[z][y]['duplet'] = True
+                    info[z][x]['duplet_SSD'] = SSD
+                    info[z][x]['duplet_DATA'] = info[z][y]
+                    print("removeing duplet %s" %str(z))
+        unique = []
+        [unique.append(item) for item in remove if item not in unique]
+        remove = sorted(unique, reverse=True)
+        if config.Default_show:
+            print("removing H1-peaks: %s" %str(len(remove)))
+        for x in remove:
+            info[z].pop(x)
 
 
     #plot if enabled in config
