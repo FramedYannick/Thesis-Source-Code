@@ -75,6 +75,7 @@ def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel):
 
         # collect info on the NON H1 peaks
         elif temp_ppm < 4.25:
+            integral = np.trapz(temp_decay)
 
 
 
@@ -84,8 +85,7 @@ def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel):
 
 
 
-
-            temp_info = {'data': temp_decay, 'ppm': temp_ppm,'duplet': False}
+            temp_info = {'data': temp_decay, 'ppm': temp_ppm,'duplet': False,'integral': integral}
             info[2].append(temp_info)
 
     #duplet filtering

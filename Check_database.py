@@ -11,6 +11,12 @@ def duplet(sugar):
 	return sugar['duplet']
 
 def find_LCC (x, a, b):
+	#find the current list in the temp file
+	cwd = os.getcwd()
+	dir = cwd + r"\temp.p"
+	from pickle import load
+	arrays = load( open(dir,"rb"))
+
 	return x
 
 
@@ -34,13 +40,17 @@ def Check_database(info_sugar, vclist):
 				sugar_listh1[-1].append(x)
 
 	#comparison for the other peaks with the H1 filtered decays
-	for h_peak in info_sugar[2]:
-		a = 1
+	#find most significant peaks
+	info_sugar[2] = sorted(info_sugar[2], key=lambda x: x['integral'],reverse=True)
+	for x in info_sugar[2]:
+		a=1
 
+	from pickle import dump
+	import os
+	#dump(LIST FILL IN, open(os.getcwd() + r"\temp.p", "wb"))
 
 
 	#print out all poss sugars for now
 	for x in sugar_listh1:
 		for y in x:
 			print(y)
-	print(vclist)
