@@ -5,77 +5,95 @@ designed by Dandois for fitting the curves on the peaks
 
 
 def func ():
-    return ()
+	return ()
 
 def func_H1 (I, m, x1,y1):
-    return (m*(I-x1)+y1)
+	return (m*(I-x1)+y1)
 
 def fn_plot_data (axis, info):
-    import matplotlib.pyplot as plt
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    color = 0
-    colors = ['ro', 'bo', 'go', 'co', 'mo', 'yo', 'ko','r^', 'b^', 'g^', 'c^', 'm^', 'y^', 'k^','r*', 'b*', 'g*', 'c*', 'm*', 'y*', 'k*','rd', 'bd', 'gd', 'cd', 'md', 'yd', 'kd','rD', 'bD', 'gD', 'cD', 'mD', 'yD', 'kD',]
-    peaks = info[1]+ info[2]
+	import matplotlib.pyplot as plt
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	color = 0
+	colors = ['ro', 'bo', 'go', 'co', 'mo', 'yo', 'ko','r^', 'b^', 'g^', 'c^', 'm^', 'y^', 'k^','r*', 'b*', 'g*', 'c*', 'm*', 'y*', 'k*','rd', 'bd', 'gd', 'cd', 'md', 'yd', 'kd','rD', 'bD', 'gD', 'cD', 'mD', 'yD', 'kD',]
+	peaks = info[1]+ info[2]
 
-    for y in range(len(peaks)):
-        if y == len(colors)-1:
-            color = 0
-        else:
-            color += 1
-        ydata = (peaks[y]['data'])
-        ppm = peaks[y]['ppm']
-        ax.plot(axis, ydata, colors[color],label=str(ppm))
-    plt.legend()
-    plt.show()
+	for y in range(len(peaks)):
+		if y == len(colors)-1:
+			color = 0
+		else:
+			color += 1
+		ydata = (peaks[y]['data'])
+		ppm = peaks[y]['ppm']
+		ax.plot(axis, ydata, colors[color],label=str(ppm))
+	plt.legend()
+	plt.show()
 
 def fn_SSD (listA, listB=[]):
-    import numpy as np
-    from config import Default_show
-    if listB == []:
-        for x in range(len(listA)):
-            listB.append(0.)
-    data = np.array(listA) - np.array(listB)
-    result = np.sqrt(np.sum((np.mean(data)-data)**2))
-    return result
+	import numpy as np
+	from config import Default_show
+	if listB == []:
+		for x in range(len(listA)):
+			listB.append(0.)
+	data = np.array(listA) - np.array(listB)
+	result = np.sqrt(np.sum((np.mean(data)-data)**2))
+	return result
+
+def fn_normalize_temp (matrix):
+	from numpy import max
+	max = max(matrix)
+	for x in range(len(matrix)):
+		for y in range(len(matrix[x])):
+			matrix[x][y] = matrix[x][y]/max
+	return matrix
+
+def fn_normalize (info):
+	import numpy as np
+	#find max first
+	max = 1
+	for x in info[1]:
+		temp_max = np.max(x['data'])
+		if temp_max > max:
+			max = temp_max
+	for z in [1,2]:
+		for x in range(len(info[z])):
+			info[z][x]['data'] = info[z][x]['data']/max
+	return info
 
 
 ################################################################################ MAIN FUNCTION
 def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel):
-    from GUI_mainframe import update_GUI
-    import numpy as np
-    from scipy.optimize import curve_fit
-    import config
+	from GUI_mainframe import update_GUI
+	import numpy as np
+	from scipy.optimize import curve_fit
+	import config
 
-    update_GUI("Fitting curves to the data...",printlabel)
+	update_GUI("Fitting curves to the data...",printlabel)
 
-    #normalize the data towards the first
-    max = np.max(peaks_value_list)
-    for x in range(len(peaks_value_list)):
-        for y in range(len(peaks_value_list[x])):
-            peaks_value_list[x][y] = peaks_value_list[x][y]/max
+	#normalize the data towards the first
+	peaks_value_list = fn_normalize_temp(peaks_value_list)
 
-    #collect information on each peak
-    info = ["",[],[]]
-    for x in range(len(peaks_value_list)):
-        temp_ppm = peaks_ppm[x]
-        temp_decay = peaks_value_list[x]
-        # check for the different types of H1s
-        if temp_ppm > 4.25 and temp_decay[0] > 0.3:
-            temp_max_ind, temp_max = sorted(enumerate(temp_decay),key=(lambda x: x[1]))[len(temp_decay)-1]
-            temp_drop = (temp_max - temp_decay[len(temp_decay)-1])
-            m = temp_drop / (vclist[temp_max_ind] - vclist[len(temp_decay)-1])
-            #calculate linear function
-            temp_lin = []
-            for I in vclist:
-                temp_lin.append(func_H1(I,m,vclist[temp_max_ind],temp_max))
-            temp_SSD = fn_SSD(temp_decay,temp_lin)
-            temp_info = {'data': temp_decay, 'ppm': temp_ppm, 'duplet': False, 'curve': {'drop': temp_drop,'lin_SSD': temp_SSD, 'rico': m, 'max_mix': (vclist[temp_max_ind], temp_max)}}
-            info[1].append(temp_info)
+	#collect information on each peak
+	info = ["",[],[]]
+	for x in range(len(peaks_value_list)):
+		temp_ppm = peaks_ppm[x]
+		temp_decay = peaks_value_list[x]
+		# check for the different types of H1s
+		if temp_ppm > 4.25 and temp_decay[0] > 0.3:
+			temp_max_ind, temp_max = sorted(enumerate(temp_decay),key=(lambda x: x[1]))[len(temp_decay)-1]
+			temp_drop = (temp_max - temp_decay[len(temp_decay)-1])
+			m = temp_drop / (vclist[temp_max_ind] - vclist[len(temp_decay)-1])
+			#calculate linear function
+			temp_lin = []
+			for I in vclist:
+				temp_lin.append(func_H1(I,m,vclist[temp_max_ind],temp_max))
+			temp_SSD = fn_SSD(temp_decay,temp_lin)
+			temp_info = {'data': temp_decay, 'ppm': temp_ppm, 'duplet': False, 'curve': {'drop': temp_drop,'lin_SSD': temp_SSD, 'rico': m, 'max_mix': (vclist[temp_max_ind], temp_max)}}
+			info[1].append(temp_info)
 
-        # collect info on the NON H1 peaks
-        elif temp_ppm < 4.25:
-            integral = np.trapz(temp_decay)
+		# collect info on the NON H1 peaks
+		elif temp_ppm < 4.25:
+			integral = np.trapz(temp_decay)
 
 
 
@@ -85,46 +103,53 @@ def fn_fit_curves (vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel):
 
 
 
-            temp_info = {'data': temp_decay, 'ppm': temp_ppm,'duplet': False,'integral': integral}
-            info[2].append(temp_info)
+			temp_info = {'data': temp_decay, 'ppm': temp_ppm,'duplet': False,'integral': integral}
+			info[2].append(temp_info)
 
-    #duplet filtering
-    for z in [1,2]:
-        remove = []
-        for x in range(len(info[z])):
-            for y in range(x+1,len(info[z])):
-                #SSD = fn_SSD(info[z][x]['data'], info[z][y]['data'])
-                SSD = np.corrcoef(info[z][x]['data'], info[z][y]['data'])[0][1]
-                D_ppm = abs(info[z][y]['ppm']-info[z][x]['ppm'])
-                if z == 1:
-                    D_drop = abs(info[z][y]['curve']['drop']-info[z][x]['curve']['drop'])
-                else:
-                    D_drop = 0.5
-                if abs(SSD) > 0.9 and D_ppm < duplet_ppm and D_drop < 0.10:
-                    remove.append(y)
-                    info[z][x]['duplet'] = True
-                    info[z][y]['duplet'] = True
-                    info[z][x]['duplet_SSD'] = SSD
-                    info[z][x]['duplet_DATA'] = info[z][y]
-                    print("removeing duplet %s" %str(z))
-        unique = []
-        [unique.append(item) for item in remove if item not in unique]
-        remove = sorted(unique, reverse=True)
-        if config.Default_show:
-            print("removing H1-peaks: %s" %str(len(remove)))
-        for x in remove:
-            info[z].pop(x)
+	#duplet filtering
+	for z in [1,2]:
+		remove = []
+		for x in range(len(info[z])):
+			for y in range(x+1,len(info[z])):
+				#SSD = fn_SSD(info[z][x]['data'], info[z][y]['data'])
+				PCC = np.corrcoef(info[z][x]['data'], info[z][y]['data'])[0][1]
+				D_ppm = abs(info[z][y]['ppm']-info[z][x]['ppm'])
+				if z == 1:
+					D_drop = abs(info[z][y]['curve']['drop']-info[z][x]['curve']['drop'])
+				else:
+					D_drop = 0.05
+				if abs(PCC) > 0.9 and D_ppm < duplet_ppm and D_drop < 0.10:
+					remove.append(y)
+					info[z][x]['duplet'] = True
+					info[z][y]['duplet'] = True
+					info[z][x]['duplet_PCC'] = PCC
+					info[z][x]['data'] = np.sum([info[z][x]['data'],info[z][y]['data']],axis=0)
+					info[z][x]['duplet_DATA'] = [info[z][x], info[z][y]]
+					print("removeing duplet %s" %str(z))
+		unique = []
+		[unique.append(item) for item in remove if item not in unique]
+		remove = sorted(unique, reverse=True)
+		if config.Default_show:
+			print("removing H1-peaks: %s" %str(len(remove)))
+		for x in remove:
+			info[z].pop(x)
 
+	#info = fn_normalize(info)
 
-    #plot if enabled in config
-    if config.Default_show:
-        print("H1 peaks:")
-        for x in range(len(info[1])):
-            print(info[1][x])
-        print("non H1 peaks:")
-        for x in range(len(info[2])):
-            print(info[2][x])
-        fn_plot_data(vclist, info)
-    update_GUI("Ready to process all peaks.", printlabel)
+	#triplet filtering - only executed on NON H1 peaks!
+	for x in range(len(info[2])):
+		for y in range(x + 1, len(info[2])):
+			a = 1
 
-    return info,vclist
+	#plot if enabled in config
+	if config.Default_show:
+		print("H1 peaks:")
+		for x in range(len(info[1])):
+			print(info[1][x])
+		print("non H1 peaks:")
+		for x in range(len(info[2])):
+			print(info[2][x])
+		fn_plot_data(vclist, info)
+	update_GUI("Ready to process all peaks.", printlabel)
+
+	return info,vclist

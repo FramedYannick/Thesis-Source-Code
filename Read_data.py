@@ -98,21 +98,52 @@ def fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel):
 
 
 	#update the GUI
-	npeaks = len(peaks_ind)
-	update_GUI("Number of unique determined peaks:  %s\n" %str(npeaks),printlabel)
+	update_GUI("Number of unique determined peaks:  %s\n" %str(len(peaks_ind)),printlabel)
+
+	#find all integral limits
+	if config.Default_mode:
+		integral_limits = [] #format: list of [left boundry, right boundry]
+		for x in peaks_ind:
+			y, z = x, x #y for the left bound; z for the right
+			while (data_max[y] > 0.605630659713 * data_max[x]):
+				y = y - 1
+			while (data_max[z] > 0.605630659713 * data_max[x]):
+				z = z + 1
+			integral_limits.append([y,z])
+
+		#correct for double integrals - upper limit
+		remove = []
+		for x in range(len(peaks_ind)-1):
+			for y in range(x+1,len(peaks_ind)):
+				if integral_limits[y][0] < integral_limits[x][1] < integral_limits[y][1]:
+					integral_limits[y][0] = integral_limits[x][0]
+					remove.append(x)
+		remove = sorted(remove, reverse=True)
+		for x in remove:
+			peaks_ind.pop(x)
+			integral_limits.pop(x)
+		#correct for containing integrals
+			remove = []
+			for x in range(len(peaks_ind)):
+				for y in range(len(peaks_ind)):
+					if integral_limits[x][0] < integral_limits[y][0] and integral_limits[y][1] < integral_limits[x][1]:
+						remove.append(y)
+			remove = sorted(remove, reverse=True)
+			for x in remove:
+				peaks_ind.pop(x)
+				integral_limits.pop(x)
+
 
 	#calculate all values per peak and convert ind to ppm
 	peaks_value_list = []
 	peak_ind_ppm = []
-	for x in peaks_ind:
+	for y in range(len(peaks_ind)):
+		x = peaks_ind[y]
 		peak_ind_ppm.append(((len(data[0])-x)/len(data[0])*SW_ppm)+(SO1_ppm-0.5*SW_ppm))
 		temp = []
 		for row in data:
 			if config.Default_mode:
-				#use the integral of the function - stepwize: 1. find boundries; 2. use trapz to achieve intensity; 3. fit curves will normalize anyway
-				if config.Default_show:
-					print("integral mode is not operatable yet")
-				temp.append(row[x])
+				temp.append(np.trapz(row[integral_limits[y][0]:integral_limits[y][1]])/0.682)
 			else:
 				temp.append(row[x])
 		peaks_value_list.append(temp)

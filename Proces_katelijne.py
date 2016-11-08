@@ -48,10 +48,19 @@ def katelijne(printlabel):
 			print("______________________________________________")
 			print(sugar)
 			print('------')
+
+
 		(vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data2, SW_ppm, SO1_ppm, printlabel)
 		info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel)
 		info[0] = sugar
 		database.append(info)
+
+
+
+
+
+
+
 
 	#create the database dump file
 	import pickle

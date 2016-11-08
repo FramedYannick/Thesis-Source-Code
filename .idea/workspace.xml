@@ -20,11 +20,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="Check_database.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/Check_database.py">
+      <file leaf-file-name="Read_data.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Read_data.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="833">
-              <caret line="49" column="5" selection-start-line="49" selection-start-column="5" selection-end-line="49" selection-end-column="5" />
+            <state relative-caret-position="458">
+              <caret line="148" column="37" selection-start-line="148" selection-start-column="37" selection-end-line="148" selection-end-column="37" />
               <folding />
             </state>
           </provider>
@@ -33,18 +33,30 @@
       <file leaf-file-name="Fit_curves.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Fit_curves.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1479">
-              <caret line="87" column="97" selection-start-line="87" selection-start-column="97" selection-end-line="87" selection-end-column="97" />
+            <state relative-caret-position="412">
+              <caret line="132" column="60" selection-start-line="132" selection-start-column="60" selection-end-line="132" selection-end-column="60" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="config.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/config.py">
+      <file leaf-file-name="test_duplet.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/temp test files/test_duplet.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="153">
-              <caret line="9" column="100" selection-start-line="9" selection-start-column="100" selection-end-line="9" selection-end-column="100" />
+            <state relative-caret-position="169">
+              <caret line="35" column="19" selection-start-line="35" selection-start-column="19" selection-end-line="35" selection-end-column="19" />
+              <folding>
+                <element signature="e#535#553#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Check_database.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Check_database.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="255">
+              <caret line="48" column="25" selection-start-line="48" selection-start-column="25" selection-end-line="48" selection-end-column="25" />
               <folding />
             </state>
           </provider>
@@ -75,12 +87,15 @@
         <option value="$PROJECT_DIR$/temp test files/test_peak detection.py" />
         <option value="$PROJECT_DIR$/test_peakutils.py" />
         <option value="$PROJECT_DIR$/temp test files/test_peakutils.py" />
-        <option value="$PROJECT_DIR$/config.py" />
-        <option value="$PROJECT_DIR$/Read_data.py" />
         <option value="$PROJECT_DIR$/GUI_mainframe.py" />
+        <option value="$PROJECT_DIR$/temp test files/Testing.py" />
+        <option value="$PROJECT_DIR$/config.py" />
         <option value="$PROJECT_DIR$/Proces_katelijne.py" />
-        <option value="$PROJECT_DIR$/Fit_curves.py" />
+        <option value="$PROJECT_DIR$/temp test files/test_python lines.py" />
+        <option value="$PROJECT_DIR$/temp test files/test_duplet.py" />
         <option value="$PROJECT_DIR$/Check_database.py" />
+        <option value="$PROJECT_DIR$/Read_data.py" />
+        <option value="$PROJECT_DIR$/Fit_curves.py" />
       </list>
     </option>
   </component>
@@ -115,6 +130,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -150,37 +166,22 @@
         </subPane>
       </pane>
       <pane id="Scratches" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+    <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Python" />
     <property name="settings.editor.splitter.proportion" value="0.2" />
-    <property name="last_opened_file_path" value="D:/Programs/anaconda/python.exe" />
+    <property name="last_opened_file_path" value="D:/Software/anaconda/pythonw.exe" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\yannick\Documents\_Documenten\UGent\Thesis\Github\Thesis-Source-Code\temp test files" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\Yannick\Documents\_Documenten\UGent\Thesis\Github\Thesis-Source-Code\temp test files" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.GUI_mainframe">
-    <configuration default="false" name="Peak_finder" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="Thesis-Source-Code" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Peak_finder.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.test_duplet">
     <configuration default="false" name="GUI_mainframe" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -194,23 +195,6 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="Thesis-Source-Code" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/GUI_mainframe.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
-    <configuration default="false" name="Proces_katelijne" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="Thesis-Source-Code" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Proces_katelijne.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -245,6 +229,40 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="Thesis-Source-Code" />
       <option name="SCRIPT_NAME" value="C:\Users\Yannick\Documents\_Documenten\UGent\Thesis\Github\Thesis-Source-Code\temp test files\test_peakutils.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="test_python lines" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/temp test files" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Thesis-Source-Code" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/temp test files/test_python lines.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="test_duplet" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/temp test files" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Thesis-Source-Code" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/temp test files/test_duplet.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -384,19 +402,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.Peak_finder" />
-      <item index="1" class="java.lang.String" itemvalue="Python.GUI_mainframe" />
-      <item index="2" class="java.lang.String" itemvalue="Python.Proces_katelijne" />
-      <item index="3" class="java.lang.String" itemvalue="Python.test_peak detection" />
-      <item index="4" class="java.lang.String" itemvalue="Python.test_peakutils" />
+      <item index="0" class="java.lang.String" itemvalue="Python.GUI_mainframe" />
+      <item index="1" class="java.lang.String" itemvalue="Python.test_peak detection" />
+      <item index="2" class="java.lang.String" itemvalue="Python.test_peakutils" />
+      <item index="3" class="java.lang.String" itemvalue="Python.test_python lines" />
+      <item index="4" class="java.lang.String" itemvalue="Python.test_duplet" />
     </list>
     <recent_temporary>
       <list size="5">
         <item index="0" class="java.lang.String" itemvalue="Python.GUI_mainframe" />
-        <item index="1" class="java.lang.String" itemvalue="Python.test_peakutils" />
-        <item index="2" class="java.lang.String" itemvalue="Python.test_peak detection" />
-        <item index="3" class="java.lang.String" itemvalue="Python.Peak_finder" />
-        <item index="4" class="java.lang.String" itemvalue="Python.Proces_katelijne" />
+        <item index="1" class="java.lang.String" itemvalue="Python.test_duplet" />
+        <item index="2" class="java.lang.String" itemvalue="Python.test_python lines" />
+        <item index="3" class="java.lang.String" itemvalue="Python.test_peakutils" />
+        <item index="4" class="java.lang.String" itemvalue="Python.test_peak detection" />
       </list>
     </recent_temporary>
   </component>
@@ -417,23 +435,23 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="false" />
     <layout>
-      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1203125" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1203125" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3065539" sideWeight="0.50208336" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3065539" sideWeight="0.49791667" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39852008" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3065539" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39852008" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -457,14 +475,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/test for python.py" />
-    <entry file="file://$PROJECT_DIR$/config.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="101" selection-start-line="14" selection-start-column="101" selection-end-line="14" selection-end-column="101" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/GUI_mainframe.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1462">
@@ -575,7 +585,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Read.py" />
     <entry file="file://$PROJECT_DIR$/ProcessNiels.py" />
-    <entry file="file://D:/Software/Anaconda/Lib/site-packages/nmrglue/fileio/bruker.py" />
+    <entry file="file://D:/Software/anaconda/Lib/site-packages/nmrglue/fileio/bruker.py" />
     <entry file="file://$PROJECT_DIR$/Peak_writer.py" />
     <entry file="file://$PROJECT_DIR$/detect_peaks.py" />
     <entry file="file://$PROJECT_DIR$/test for python.py" />
@@ -592,47 +602,67 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Read_data.py">
+    <entry file="file://$PROJECT_DIR$/temp test files/Testing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-933">
-          <caret line="35" column="28" selection-start-line="35" selection-start-column="28" selection-end-line="36" selection-end-column="25" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/temp test files/test_python lines.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Fit_curves.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1479">
-          <caret line="87" column="97" selection-start-line="87" selection-start-column="97" selection-end-line="87" selection-end-column="97" />
-          <folding />
+        <state relative-caret-position="289">
+          <caret line="17" column="16" selection-start-line="17" selection-start-column="16" selection-end-line="17" selection-end-column="16" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/config.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="153">
-          <caret line="9" column="100" selection-start-line="9" selection-start-column="100" selection-end-line="9" selection-end-column="100" />
+        <state relative-caret-position="238">
+          <caret line="14" column="19" selection-start-line="14" selection-start-column="19" selection-end-line="14" selection-end-column="19" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Proces_katelijne.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="373">
-          <caret line="57" column="4" selection-start-line="57" selection-start-column="4" selection-end-line="58" selection-end-column="73" />
+        <state relative-caret-position="747">
+          <caret line="63" column="0" selection-start-line="63" selection-start-column="0" selection-end-line="63" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/temp test files/test_python lines.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="15" column="3" selection-start-line="15" selection-start-column="3" selection-end-line="15" selection-end-column="3" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/temp test files/test_duplet.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="169">
+          <caret line="35" column="19" selection-start-line="35" selection-start-column="19" selection-end-line="35" selection-end-column="19" />
+          <folding>
+            <element signature="e#535#553#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Check_database.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="833">
-          <caret line="49" column="5" selection-start-line="49" selection-start-column="5" selection-end-line="49" selection-end-column="5" />
+        <state relative-caret-position="255">
+          <caret line="48" column="25" selection-start-line="48" selection-start-column="25" selection-end-line="48" selection-end-column="25" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Fit_curves.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="412">
+          <caret line="132" column="60" selection-start-line="132" selection-start-column="60" selection-end-line="132" selection-end-column="60" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Read_data.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="458">
+          <caret line="148" column="37" selection-start-line="148" selection-start-column="37" selection-end-line="148" selection-end-column="37" />
           <folding />
         </state>
       </provider>
