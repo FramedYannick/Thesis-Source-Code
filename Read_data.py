@@ -118,20 +118,22 @@ def fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel):
 				if integral_limits[y][0] < integral_limits[x][1] < integral_limits[y][1]:
 					integral_limits[y][0] = integral_limits[x][0]
 					remove.append(x)
-		remove = sorted(remove, reverse=True)
+		unique = []
+		[unique.append(item) for item in remove if item not in unique]
+		remove = sorted(unique, reverse=True)
 		for x in remove:
 			peaks_ind.pop(x)
 			integral_limits.pop(x)
 		#correct for containing integrals
-			remove = []
-			for x in range(len(peaks_ind)):
-				for y in range(len(peaks_ind)):
-					if integral_limits[x][0] < integral_limits[y][0] and integral_limits[y][1] < integral_limits[x][1]:
-						remove.append(y)
-			remove = sorted(remove, reverse=True)
-			for x in remove:
-				peaks_ind.pop(x)
-				integral_limits.pop(x)
+		remove = []
+		for x in range(len(peaks_ind)):
+			for y in range(len(peaks_ind)):
+				if integral_limits[x][0] < integral_limits[y][0] and integral_limits[y][1] < integral_limits[x][1]:
+					remove.append(y)
+		remove = sorted(remove, reverse=True)
+		for x in remove:
+			peaks_ind.pop(x)
+			integral_limits.pop(x)
 
 
 	#calculate all values per peak and convert ind to ppm
