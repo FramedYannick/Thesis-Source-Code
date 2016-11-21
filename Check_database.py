@@ -49,7 +49,6 @@ def Check_database(info_sugar, vclist):
 			if PCC > 0.9:
 				x[1][0]['PCC_H1'] = PCC
 				sugar_listh1[-1].append(x)
-				print(PCC)
 
 	#comparison for the other peaks with the H1 filtered decays
 	#find most significant peaks

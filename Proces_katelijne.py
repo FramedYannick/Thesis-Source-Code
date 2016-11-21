@@ -49,8 +49,16 @@ def katelijne(printlabel):
 			print(sugar)
 			print('------')
 
+		#scaling compensation caused by NMRGlue
+		scaling_factor = np.trapz(data2[0])
+		data = []
+		for row in data2:
+			row = row*scaling_factor/np.trapz(row)
+			data.append(row)
 
-		(vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data2, SW_ppm, SO1_ppm, printlabel)
+
+
+		(vclist, peaks_value_list, peaks_ppm) = rd.fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel)
 		info, vclist = fc.fn_fit_curves(vclist, peaks_value_list, peaks_ppm, duplet_ppm, printlabel)
 		info[0] = sugar
 		database.append(info)
