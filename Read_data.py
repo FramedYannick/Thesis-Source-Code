@@ -2,12 +2,32 @@
 designed by Dandois for reading the data using the NMRGlue python processing module
 
 """
+#side functions as support
 
 def fn_check_dir(dir,file):
 	import os.path
 	return (os.path.isfile(dir + '\\' + file))
 
-def fn_read_data(dir,printlabel):
+def fn_unique(list):
+	unique = []
+	[unique.append(item) for item in list if item not in unique]
+	return unique
+
+
+
+
+
+
+
+
+
+
+
+
+
+#######################################################################main functions
+
+def fn_read_data(dir, printlabel):
 	import nmrglue as ng
 	import numpy as np
 	import matplotlib.pyplot as plt
@@ -15,53 +35,127 @@ def fn_read_data(dir,printlabel):
 	from detect_peaks import detect_peaks
 	from GUI_mainframe import update_GUI
 	# read in the data from given dir
-	update_GUI("Reading in data.\ntesting second line",printlabel)
+	update_GUI("Reading in data.",printlabel)
 
+	#read the data
 	dic, data = ng.bruker.read_pdata(dir)  # this has been processed with topspin; no math is needed
+
+	# collect the parameters and convert to ppm
+	dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
+	B0_hz = float(dic2[dic2.find(r'$SFO1=') + 7:dic2.find('##$SFO2')])
+	#SO1_hz = float(dic2[dic2.find(r'$O1=') + 5:dic2.find('##$O2')])
+	SW_hz = float(dic['procs']['SW_p'])
+	SW_ppm = SW_hz / B0_hz
+	duplet_ppm = 15/B0_hz #from Karplus
+
+	#collect the list parameters
+	vclist = []
+	if (fn_check_dir(dir[:dir.find('pdata')],r'\vclist')):
+		vclist_file = open(dir[:dir.find('pdata')] + r'\vclist', 'r').readlines()
+		for x in vclist_file:
+			vclist.append(int(x))
+	fqlist = []
+	fqlist_ppm = []
+	if (fn_check_dir(dir[:dir.find('pdata')], r'\fqlist')):
+		fqlist_file = open(dir[:dir.find('pdata')] + r'\fqlist', 'r').readlines()
+		for x in fqlist_file:
+			fqlist.append(float(x))
+			fqlist_ppm.append(float(x)/B0_hz)
 
 	#temporary reform of data due to 'oversave effect'
 	from copy import deepcopy
 	test_data = deepcopy(data)
 	data = []
-	for x in test_data:
-		if x[0] != 0.0:
+	for x in range(len(test_data)):
+		if test_data[x][0] != 0.0:
 			data.append(x)
-
-	# collect the parameters and convert to ppm
-	dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
-	B0_hz = float(dic2[dic2.find(r'$SFO1=') + 7:dic2.find('##$SFO2')])
-	SO1_hz = float(dic2[dic2.find(r'$O1=') + 5:dic2.find('##$O2')])
-	SW_hz = float(dic['procs']['SW_p'])
-	SW_ppm = SW_hz / B0_hz
-	SO1_ppm = SO1_hz / B0_hz
-	duplet_ppm = 14/B0_hz
-
-	#collect the list type parameter (should be changed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-	vclist = []
-	vclist_file = open(dir[:dir.find('pdata')] + r'\vclist', 'r').readlines()
-	for x in vclist_file:
-		vclist.append(int(x))
-
-	#temperature shift correction on the data
-	temp = []
-	zeromax = max(enumerate(data[0]),key=(lambda x: x[1]))[0]
-	for x in data:      #find a list with the shifts
-			temp.append(max(enumerate(x[(zeromax - 3) : (zeromax + 3)]),key=(lambda x: x[1]))[0] + zeromax -3)
-	for x in range(1,len(data)):
-		if temp[x] < zeromax:
-			for y in range(abs(temp[x] - zeromax)):
-				data[x] = np.insert(data[x],0,0.00001)
-				data[x] = np.delete(data[x],len(data[x])-1)
-		elif temp[x] > zeromax:
-			for y in range(abs(temp[x] - zeromax)):
-				data[x] = np.delete(data[x],0)
-				data.append(0.)
-	return vclist, data, SW_ppm, SO1_ppm, duplet_ppm
+	return [vclist,fqlist_ppm], data, SW_ppm, duplet_ppm
 
 
 
+#function to split up data; and find the unique frequencies
+#returns list with each fq specific data and the unique fqlist
+def fn_reform (data, lists, SW_hz, SW_ppm):
+	import numpy as np
 
-def fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel):
+	#set the easy variables
+	vclist, fqlist = lists[0], lists[1]
+	SW_ppm, SW_hz = SW_ppm/2, SW_hz/2
+
+	#find the unique fq and check for errors
+	num_fq = int(len(fqlist)/len(vclist))
+	fqlist_u = fn_unique(fqlist)
+	if (not len(fqlist_u) == num_fq):
+		print("Not a correct VCLIST!")
+		exit("error")
+
+	#chunk up the data per fq and remove the minus signals (reduce data amount for calculations)
+	new_data = []
+	for x in range(num_fq):
+		chunk = data[x*len(vclist):((x+1)*len(vclist))]
+		row = chunk[0]
+		keep = len(row)/2	#remove negative half
+		new_chunk = []
+		for row in chunk:
+			new_chunk.append(row[keep])
+		new_data.append(new_chunk)
+	return new_data, fqlist_u
+
+
+
+#function to process the data - find the max of data; and the peaklist
+def fn_process_chunk(data, printlabel):
+	import nmrglue as ng
+	import numpy as np
+	import peakutils as pk
+
+	from GUI_mainframe import update_GUI
+	update_GUI("Calculating peaks and integrals for each chunk.", printlabel)
+
+	#define data variables
+	data_max = []
+	data_peaks = []
+	data_integrals = []
+
+	for chunk in data:
+
+		chunk_max = []		#find the max curve for peak picking
+		for x in np.array(chunk).T:
+			chunk_max.append(np.max(x))
+		chunk_peak_ind = pk.indexes(chunk_max, thres = 0.0)
+		#recheck the peak index search function
+		#chunk_peak_ind = detect_peaks(data[len(data)-1], mph=(np.max(data)*config.Default_minpeakhight), mpd=(config.Default_inter_peak_distance*len(data[len(data)-1])/SW_ppm),threshold=config.Default_Threshold,edge='rising',show=config.Default_show)
+		limit = 0.01*np.max(chunk_max)	#set a noise peak limit
+		temp_ind = []
+		for x in chunk_peak_ind:
+			if chunk_max[x] > limit:
+				temp_ind.append(x)
+		chunk_peak_ind = temp_ind
+
+		#use the indices to find the integral limits
+		chunk_integrals = []
+
+#integral function should be written here
+
+
+
+
+
+		data_integrals.append(chunk_integrals)
+		data_peaks.append(chunk_peak_ind)
+		data_max.append(chunk_max)
+
+
+	return data, data_max, data_peaks
+
+
+#######################################################################################################################
+#######################################################################################################################
+
+
+
+#
+def fn_process_peaks_old(vclist, data, SW_ppm, SO1_ppm, printlabel):
 	import nmrglue as ng
 	import numpy as np
 	import matplotlib.pyplot as plt
@@ -69,32 +163,7 @@ def fn_process_peaks(vclist, data, SW_ppm, SO1_ppm, printlabel):
 	from detect_peaks import detect_peaks
 	from GUI_mainframe import update_GUI
 
-	#search for the peaks in the last data point
-	if (config.Default_show):
-		update_GUI("Please double check the peaks.",printlabel)
 
-	#max compensation algorithm
-	data_max = []
-	for x in np.array(data).T:
-		data_max.append(np.max(x))
-	#peak picking - this is best done on non-normalised data
-	#multiple have been tested; it has been shown that Marcos Duerto and peakutiles have been the most precise
-	import peakutils as pk
-	peaks_ind = pk.indexes(data_max, thres=0.0)
-
-	# find the noise size
-	#temp = []
-	#for x in peaks_ind:
-	#	temp.append(abs(data_max[x]))
-	#limit = np.mean(temp)*10
-	limit = 0.02*np.max(data_max) #set the limit to 2%; it has consistent results in comparison to calculations
-	#remove peaks beneath the noise ratio
-	ind_temp = []
-	for x in peaks_ind:
-		if data_max[x] > limit:
-			ind_temp.append(x)
-	peaks_ind = ind_temp
-	#peaks_ind = detect_peaks(data[len(data)-1], mph=(np.max(data)*config.Default_minpeakhight), mpd=(config.Default_inter_peak_distance*len(data[len(data)-1])/SW_ppm),threshold=config.Default_Threshold,edge='rising',show=config.Default_show)
 
 
 	#update the GUI
