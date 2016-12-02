@@ -9,10 +9,10 @@ import config
 
 
 def update_GUI(text,label):
-	if str(label) != "testing":
+	if str(label) not in ["testing", "ignore"]:
 		text += "\n"*(5-text.count('\n'))
 		label.set(text)
-	else:
+	elif str(label) == "testing":
 		print(text)
 
 

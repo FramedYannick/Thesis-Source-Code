@@ -23,7 +23,7 @@ plt.show()
 #should end up in code
 dict_param, data = fn_reform(dict_param,data)
 dict_param, data = fn_process_chunk(dict_param, data, printlabel)
-dict_param = fn_process_curve(dict_param, printlabel)
+dict_param = fn_process_curve(dict_param, data, printlabel)
 
 
 #show the curves for integral limits
@@ -51,5 +51,5 @@ for z in range(len(dict_param["chunk_param"])):
 	ax = plt.subplot(num+z)
 	ax.set_title("Chunk %s" %str(z+1))
 	for y in range(len(x["chunk_values"])):
-		plt.plot(x["chunk_values"][y],label=x["chunk_peak_ind_ppm"][y])
+		plt.plot(dict_param["mtlist"], x["chunk_values"][y], label=x["chunk_peak_ind_ppm"][y])
 plt.show()
