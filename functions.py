@@ -19,14 +19,16 @@ def fn_unique(list):
 
 
 #find the required integrals on a curve; given the peaks
-def fn_integrals(chunk_max, peaks_ind):
+def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	# use the indices to find the integral limits
 	integral_limits = []
 	for x in peaks_ind:
 		y, z = x, x  # y for the left bound; z for the right
-		while (chunk_max[y] > 0.505630659713 * chunk_max[x] and y > 2 or chunk_max[y] > 0.07):
+		#while (chunk_max[y] > 0.505630659713 * chunk_max[x] and y > 2 or chunk_max[y] > chunk_noise):
+		while chunk_max[y] > chunk_noise*6:
 			y = y - 1
-		while (chunk_max[z] > 0.4505630659713 * chunk_max[x] and z < len(chunk_max)-2 or chunk_max[z] > 0.07):
+		#while (chunk_max[z] > 0.4505630659713 * chunk_max[x] and z < len(chunk_max)-2 or chunk_max[z] > chunk_noise):
+		while chunk_max[z] > chunk_noise*6:
 			z = z + 1
 		integral_limits.append([y, z])
 
@@ -47,7 +49,8 @@ def fn_integrals(chunk_max, peaks_ind):
 	for x in range(len(peaks_ind) - 1):
 		for y in range(x + 1, len(peaks_ind)):
 			if integral_limits[y][0] < integral_limits[x][1] < integral_limits[y][1]:
-				integral_limits[y][0] = integral_limits[x][0]
+				integral_limits[y][0] = min([integral_limits[x][0], integral_limits[y][0]])
+				integral_limits[y][1] = max([integral_limits[x][1], integral_limits[y][1]])
 				remove.append(x)
 	unique = []
 	[unique.append(item) for item in remove if item not in unique]
@@ -102,18 +105,8 @@ def fn_integrate(chunk, chunk_integrals, chunk_peak_ind, SW_ppm):
 	return chunk_values, chunk_peak_ind_ppm
 
 
-#find the subplot number
-def fn_calc_plots (list):
-	number = len(list)
-	dict = {"1": 111, "2": 211, "3":311, "4":221,"5":321,"6":321,"7":331,"8":331,"9":331}
-	if number > 9:
-		return "error"
-	else:
-		return dict[str(number)]
-
-
-#perform duplet and triplet filtering
-def fn_duplet_filter(chunk_param, duplet_ppm):
+#perform duplet and triplet filtering; also filter
+def fn_integral_filter(chunk_param, duplet_ppm):
 	import numpy as np
 	remove = []
 	redo_integrals = False
@@ -130,10 +123,19 @@ def fn_duplet_filter(chunk_param, duplet_ppm):
 			remove.append(x)
 			redo_integrals = True
 
+		#remove the water peak
+		if abs(chunk_param["chunk_peak_ind_ppm"][x] - 4.7) < 0.02:
+			remove.append(x)
+
+		#remove the to low peaks
+		if np.max(chunk_param["chunk_values"][x]) < 0.015:
+			remove.append(x)
+
+
 	#remove the data from the filtered out peaks
 	remove = sorted(fn_unique(remove), reverse=True)
 	for x in remove:
-		chunk_param["chunk_values"].tolist().pop(x)
+		chunk_param["chunk_values"] = np.delete(chunk_param["chunk_values"],x,axis=0)
 		chunk_param["chunk_peak_ind_ppm"].pop(x)
 		chunk_param["peak_info"].pop(x)
 		chunk_param["chunk_integrals"].pop(x)
@@ -146,7 +148,7 @@ def fn_thresholt_filter(chunk_param):
 	import numpy as np
 	remove = []
 	for x in range(len(chunk_param["chunk_peak_ind_ppm"])):
-		if np.max(chunk_param["chunk_values"]) < 0.2:
+		if np.max(chunk_param["chunk_values"]) < 0.02:
 			remove.append(x)
 		remove = sorted(fn_unique(remove), reverse=True)
 	for x in remove:
@@ -164,7 +166,9 @@ def fn_correlation (list, list2 = []):
 	if len(list2) == 0:
 		for x in range(len(list)):
 			list2.append(x)
-	correlation = corrcoef(list, list2)[0][1]
+	#correlation = corrcoef(list, list2)[0][1]
+	from scipy.stats import pearsonr
+	correlation = pearsonr(list,list2)[1]
 	return correlation
 
 
@@ -175,10 +179,98 @@ def fn_SSD (listA, listB=[]):
 		for x in range(len(listA)):
 			listB.append(0.)
 	data = np.array(listA) - np.array(listB)
-	result = np.sqrt(np.sum((np.mean(data)-data)**2))
+	result = np.sum(np.abs((np.mean(data)-data)))
 	return result
 
 
 #calculate the rico between the first and last point
 def fn_rico (list, vclist):
 	return (list[len(list)-1] - list[0])/(len(vclist))
+
+
+#filter to be applied on peak index and chunk_max BEFORE INTEGRATION
+def fn_noise_filter(chunk_peak_ind, chunk_max):
+	import numpy as np
+	max = np.max(chunk_max)
+	noise_list = []
+	for x in chunk_peak_ind:
+		if chunk_max[x] < 0.005:
+			noise_list.append(chunk_max[x])
+			noise_list.append(-chunk_max[x])
+	limit = np.std(noise_list)*3
+	temp = []
+	for x in chunk_peak_ind:
+		if chunk_max[x] > limit:
+			temp.append(x)
+	return temp, limit
+
+
+#function for reading the title file
+def fn_read_title(dir):
+	if fn_check_dir(dir, "title"):
+		title_line = open(dir + r"\title", 'r').readlines()[0]
+		if (title_line.find("-") != -1):
+			sample_name = title_line[:(title_line.find("-") -1)]
+			extra_info = title_line[(title_line.find("-") +2):]
+			if "µ" in extra_info:
+				x = 1
+				temp_order = []
+				while len(title_line) != (title_line.find("µ")+x) and title_line[title_line.find("µ")+x] not in [" ", "-"]:
+					temp_order.append(title_line[title_line.find("µ")+x])
+					x +=1
+				order = []
+				for x in temp_order:
+					order.append({"1": "a-%spyr.", "2": "b-%spyr.", "3": "a-%sfur.", "4": "b-%sfur."}[x] %sample_name[:sample_name.find("ose")+1])
+
+			else:
+				order = []
+		else:
+			sample_name = title_line
+			extra_info = ""
+			order = []
+	else:
+		sample_name = "unknown"
+		extra_info = "unknown"
+		order = []
+	return sample_name, extra_info, order
+
+
+#calculate the significance of all functions
+def fn_sign(chunk):
+	import numpy as np
+	sign = []
+	for x in range(len(chunk["chunk_values"])):
+		sign.append([x, np.trapz(chunk["chunk_values"][x])])
+	sign.sort(key=lambda x: x[1],reverse=True)
+	chunk["chunk_sign"] = sign
+	return chunk
+
+"""
+#compare two functions - used for database reference search
+def fn_compare_fn(curve1, curve2):
+	import numpy as np
+	#here you can play with the diff types of correlations
+	corr = np.trapz(abs(np.array(curve1) - np.array(curve2)))
+	return corr
+
+def fn_compare_fn(x,y):
+	import numpy as np
+	zx = (x - np.mean(x)) / np.std(x, ddof=1)
+	zy = (y - np.mean(y)) / np.std(y, ddof=1)
+	r = np.sum(zx * zy) / (len(x) - 1)
+	return r**2
+"""
+
+def fn_compare_fn(x_list, y_list):
+	import math
+	n = len(x_list)
+	x_bar = sum(x_list)/n
+	y_bar = sum(y_list)/n
+	x_std = math.sqrt(sum([(xi-x_bar)**2 for xi in x_list])/(n-1))
+	y_std = math.sqrt(sum([(yi-y_bar)**2 for yi in y_list])/(n-1))
+	zx = [(xi-x_bar)/x_std for xi in x_list]
+	zy = [(yi-y_bar)/y_std for yi in y_list]
+	r = sum(zxi*zyi for zxi, zyi in zip(zx, zy))/(n-1)
+	if math.isnan(r**2):
+		r=0.99
+	return r**2

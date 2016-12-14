@@ -18,9 +18,8 @@ def fn_read_data(dir, printlabel="testing"):
 	dic, data = ng.bruker.read_pdata(dir)  # this has been processed with topspin; no math is needed
 
 	#read in the alternate data if possible - compenation for the NMRGlue chunk error
-	if fn_check_dir(dir, "spectra.txt"):
-		update_GUI("reading extra data file","testing")
-		data_file = open(dir + r"\spectra.txt", 'r').readlines()
+	if fn_check_dir(dir, "DATABASE.txt"):
+		data_file = open(dir + r"\DATABASE.txt", 'r').readlines()
 		data = []
 		for line in data_file:
 			if ("row" in line):
@@ -36,6 +35,9 @@ def fn_read_data(dir, printlabel="testing"):
 	SW_hz = float(dic['procs']['SW_p'])
 	SW_ppm = SW_hz / B0_hz
 	duplet_ppm = 15/B0_hz #from Karplus
+
+	dic3 = open(dir[:dir.find('pdata')] + r'\acqu2s', 'r').read()
+	chunk_num = int(int(dic3[dic3.find(r'$TD=') + 5:dic3.find(r'$TD=')+7])/13)
 
 	#collect the list parameters
 	vclist = []
@@ -58,17 +60,8 @@ def fn_read_data(dir, printlabel="testing"):
 		mtlist.append(115.122*25*10**(-6)*x)
 
 	#colect the title
-	if (fn_check_dir(dir, "title")):
-		title_line = open(dir + r"\title", 'r').readlines()[0]
-		if (title_line.find("-") != -1):
-			sample_name = title_line[:(title_line.find("-") -1)]
-			extra_info = title_line[:(title_line.find("-") +1)]
-		else:
-			sample_name = title_line
-			extra_info = ""
-	else:
-		sample_name = "unknown"
-		extra_info = "unknown"
+	from functions import fn_read_title
+	sample_name, extra_info, order = fn_read_title(dir)
 
 	#print out the title
 	update_GUI("Working on %s sample." %sample_name, printlabel)
@@ -82,7 +75,7 @@ def fn_read_data(dir, printlabel="testing"):
 			data.append(test_data[x])
 
 	#create central dictionary with params and pas it on
-	dict_param = {"vclist":vclist, "fqlist_ppm":fqlist_ppm, "SW_ppm":SW_ppm, "duplet_ppm":duplet_ppm, "sample_name":sample_name, "extra_info":extra_info, "mtlist": mtlist}
+	dict_param = {"vclist":vclist, "fqlist_ppm":fqlist_ppm, "SW_ppm":SW_ppm, "duplet_ppm":duplet_ppm, "sample_name":sample_name, "extra_info":extra_info, "mtlist": mtlist, "order": order,"chunk_num":chunk_num}
 	return dict_param, data
 
 
@@ -99,12 +92,11 @@ def fn_reform (dict_param, data):
 	#find the unique fqs
 	from functions import fn_unique
 	fqlist_u = fn_unique(fqlist)
-	num_fq = len(fqlist_u)
 
 	#chunk up the data per fq and remove the minus signals (reduce data amount for calculations)
 	#also normalise the data per chunk!
 	new_data = []
-	for x in range(num_fq):
+	for x in range(dict_param["chunk_num"]):
 		chunk = data[x*len(vclist):((x+1)*len(vclist))]
 		max = np.max(chunk)
 		row = chunk[0]
@@ -138,19 +130,16 @@ def fn_process_chunk(dict_param, data, printlabel):
 		chunk_par["chunk_max"] = chunk_max
 		chunk_peak_ind = pk.indexes(chunk_par["chunk_max"], thres = 0.0)
 		#recheck the peak index search function
-		#chunk_peak_ind = detect_peaks(data[len(data)-1], mph=(np.max(data)*config.Default_minpeakhight), mpd=(config.Default_inter_peak_distance*len(data[len(data)-1])/SW_ppm),threshold=config.Default_Threshold,edge='rising',show=config.Default_show)
+		from detect_peaks import detect_peaks
+		chunk_peak_ind = detect_peaks(chunk_par["chunk_max"],show=False)
 
 		#remove super low peaks (background noise)
-		limit = 0.005*np.max(chunk_par["chunk_max"])	#set a noise peak limit
-		temp_ind = []
-		for x in chunk_peak_ind:
-			if chunk_par["chunk_max"][x] > limit:
-				temp_ind.append(x)
-		chunk_par["chunk_peak_ind"] = temp_ind
+		from functions import fn_noise_filter
+		chunk_par["chunk_peak_ind"], chunk_par["chunk_noise"] = fn_noise_filter(chunk_peak_ind, chunk_par["chunk_max"])
 
 		#find the integrals - no support is given towards the intensity mode for now!
 		from functions import fn_integrals
-		[chunk_par["chunk_integrals"], chunk_par["chunk_peak_ind"]] = fn_integrals(chunk_par["chunk_max"], chunk_par["chunk_peak_ind"])
+		[chunk_par["chunk_integrals"], chunk_par["chunk_peak_ind"]] = fn_integrals(chunk_par["chunk_max"], chunk_par["chunk_peak_ind"], chunk_par["chunk_noise"])
 
 		#find the integral curves
 		from functions import fn_integrate
@@ -163,7 +152,6 @@ def fn_process_chunk(dict_param, data, printlabel):
 	return dict_param, data
 
 
-
 #process the curves towards the database comparison
 def fn_process_curve(dict_param, data, printlabel):
 	#update the GUI
@@ -174,6 +162,14 @@ def fn_process_curve(dict_param, data, printlabel):
 	#perform the action on every chunk
 	for chunk_num in range(len(dict_param["chunk_param"])):
 		chunk_param = dict_param["chunk_param"][chunk_num]
+
+		#add the title for each chunk
+		order = dict_param["order"]
+		if len(order) != 0:
+			title = order[chunk_num]
+		else:
+			title = "%i-%s" %(chunk_num, dict_param["sample_name"])
+		chunk_param["sample_name"] = title
 		chunk_param["peak_info"] = []
 		#perform the action on every peak
 		for peak_num in range(len(chunk_param["chunk_values"])):
@@ -193,10 +189,9 @@ def fn_process_curve(dict_param, data, printlabel):
 			#save the info into chunk info
 			chunk_param["peak_info"].append(peak_info)
 
-
 		#perform filtering - recalculate the integrals if we have duplets and triplets
-		from functions import fn_duplet_filter
-		chunk_param, redo_integrals = fn_duplet_filter(chunk_param, dict_param["duplet_ppm"])
+		from functions import fn_integral_filter
+		chunk_param, redo_integrals = fn_integral_filter(chunk_param, dict_param["duplet_ppm"])
 		if redo_integrals:
 			# find the integral curves
 			from functions import fn_integrate
@@ -205,8 +200,27 @@ def fn_process_curve(dict_param, data, printlabel):
 		chunk_param = fn_thresholt_filter(chunk_param)
 
 
-
-
 		#store the chunk_param back into the dict_param - can be removed but kept for increased readability
 		dict_param["chunk_param"][chunk_num] = chunk_param
 	return dict_param
+
+
+#function that will handle all other functions - to be called directly from the GUI
+def fn_main_function(dir, printlabel="testing"):
+	import numpy as np
+	np.seterr(all="ignore")
+	from GUI_mainframe import update_GUI
+	import database as db
+
+	dict_param, data = fn_read_data(dir, printlabel)
+	dict_param, data = fn_reform(dict_param, data)
+	dict_param, data = fn_process_chunk(dict_param, data, printlabel)
+	dict_param = fn_process_curve(dict_param, data, printlabel)
+
+	database = db.fn_load()
+	result = db.fn_compare_database(dict_param, database, printlabel)
+	shown_result = ""
+	for x in range(len(result)):
+		shown_result += "\n%s identified as %s with a factor of %f" % (dict_param["chunk_param"][x]["sample_name"], result[x][0]["sample_name"], result[x][1])
+	update_GUI(shown_result, printlabel)
+

@@ -33,6 +33,10 @@ def fn_compile(dir, printlabel="testing"):
 	for x in temp_list:
 		if x[len(x)-2] == "2" and fn_check_dir(x+"pdata\\1","2ii") and fn_check_dir(x+"pdata\\1","2rr"):
 			dir_list.append(x)
+		if x[len(x) - 2] == "3" and fn_check_dir(x + "pdata\\1", "2ii") and fn_check_dir(x + "pdata\\1", "2rr"):
+			#if a 3 is present; use the 3 instead of the 2
+			dir_list.append(x)
+			dir_list.remove(x[:len(x) - 2]+"2"+x[len(x) - 1:])
 	final_database = []
 	progress = round(0.000000,1)
 	for y in range(len(dir_list)):
@@ -48,7 +52,7 @@ def fn_compile(dir, printlabel="testing"):
 
 		for x in dict_param["chunk_param"]:
 			final_database.append(x)
-
+	update_GUI("Compiling database - Finished", printlabel)
 	# create the database dump file
 	pickle.dump(final_database, open(Database_Directory + r"\Database.p", "wb"))
 
@@ -59,13 +63,59 @@ def fn_compile(dir, printlabel="testing"):
 			file.write(str(x) + "\n")
 	return
 
-def fn_load(printlabel):
+def fn_load():
 	#load in the pre-existing database:
 	from config import Database_Directory
 	from pickle import load
-	database = load(open(Database_Directory + r"\Database.p","rb"))
+	from functions import fn_check_dir
+	if (fn_check_dir(Database_Directory, r"\Database.p")):
+		database = load(open(Database_Directory + r"\Database.p","rb"))
+	else:
+		database = "no file"
 	return database
 
-#run function for testing purpoce
-from config import Database_Directory
-fn_compile(Database_Directory)
+#compare two chunks and give them a correlation coefficient
+def fn_compare_chunk(chunk1, chunk2):
+	import numpy as np
+	#get the significance levels for the peaks
+	from functions import fn_sign
+	chunk1 = fn_sign(chunk1)
+	from copy import deepcopy
+	temp2 = deepcopy(chunk2["chunk_values"])
+	CCF = 1#/(abs(len(chunk1["chunk_values"])-len(chunk2["chunk_values"]))+1)
+	#find most fitting function for the most sign curve of chunk1
+	from functions import fn_SSD
+	for x in range(len(chunk1["chunk_sign"][:len(temp2)])):
+		if chunk1["chunk_sign"][x] != 0.0:
+			curve1 = chunk1["chunk_values"][chunk1["chunk_sign"][x][0]]
+			alpha1 = chunk1["peak_info"][x]["alpha"]
+			best = [0,0] #curve, SSD
+			for y in range(len(temp2)):
+				curve2 = temp2[y]
+				alpha2 = chunk2["peak_info"][y]["alpha"]
+				from functions import fn_compare_fn
+				corr = fn_compare_fn(curve1, curve2)
+				if corr > best[1]:
+					best = [y,corr]
+			np.delete(temp2, best[0], axis=0)
+			CCF = CCF*(best[1])
+	return (CCF)
+
+def fn_compare_database(dict_param, database, printlabel):
+	from GUI_mainframe import update_GUI
+	if str(database) == "no file":
+		#raise error or something
+		update_GUI("no file present", printlabel)
+	else:
+		#run the code for each chunk with index X
+		results = []
+		for x in range(len(dict_param["chunk_param"])):
+			best = ["name", 0]
+			#compare against each chunk in the database
+			for y in range(len(database)):
+				corr = fn_compare_chunk(dict_param["chunk_param"][x], database[y])
+				if (corr > best[1]):
+					best = [database[y], corr]
+			results.append(best)
+	return results
+
