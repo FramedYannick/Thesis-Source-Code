@@ -3,7 +3,7 @@ designed by Dandois for reading the data using the NMRGlue python processing mod
 
 """
 
-def fn_read_data(dir, printlabel="testing"):
+def fn_read_data(dir, printlabel="testing"): #CLASSIFIED
 	import nmrglue as ng
 	import numpy as np
 	import matplotlib.pyplot as plt
@@ -18,8 +18,12 @@ def fn_read_data(dir, printlabel="testing"):
 	dic, data = ng.bruker.read_pdata(dir)  # this has been processed with topspin; no math is needed
 
 	#read in the alternate data if possible - compenation for the NMRGlue chunk error
+	data_file = ""
 	if fn_check_dir(dir, "DATABASE.txt"):
 		data_file = open(dir + r"\DATABASE.txt", 'r').readlines()
+	elif fn_check_dir(dir, "SAMPLES.txt"):
+		data_file = open(dir + r"\SAMPLES.txt", 'r').readlines()
+	if data_file != "":
 		data = []
 		for line in data_file:
 			if ("row" in line):
@@ -27,6 +31,9 @@ def fn_read_data(dir, printlabel="testing"):
 			else:
 				if "#" not in line:
 					data[len(data)-1].append(float(line.replace(r"\n","")))
+	else:
+		update_GUI("No extra data file was found...", printlabel)
+		quit()
 
 	# collect the parameters and convert to ppm
 	dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
@@ -139,7 +146,7 @@ def fn_process_chunk(dict_param, data, printlabel):
 
 		#find the integrals - no support is given towards the intensity mode for now!
 		from functions import fn_integrals
-		[chunk_par["chunk_integrals"], chunk_par["chunk_peak_ind"]] = fn_integrals(chunk_par["chunk_max"], chunk_par["chunk_peak_ind"], chunk_par["chunk_noise"])
+		chunk_par["chunk_integrals"], chunk_par["chunk_peak_ind"] = fn_integrals(chunk_par["chunk_max"], chunk_par["chunk_peak_ind"], chunk_par["chunk_noise"])
 
 		#find the integral curves
 		from functions import fn_integrate
@@ -171,6 +178,7 @@ def fn_process_curve(dict_param, data, printlabel):
 			title = "%i-%s" %(chunk_num, dict_param["sample_name"])
 		chunk_param["sample_name"] = title
 		chunk_param["peak_info"] = []
+#all done till here
 		#perform the action on every peak
 		for peak_num in range(len(chunk_param["chunk_values"])):
 			temp_ppm = chunk_param["chunk_peak_ind_ppm"][peak_num]
@@ -216,11 +224,11 @@ def fn_main_function(dir, printlabel="testing"):
 	dict_param, data = fn_reform(dict_param, data)
 	dict_param, data = fn_process_chunk(dict_param, data, printlabel)
 	dict_param = fn_process_curve(dict_param, data, printlabel)
-
 	database = db.fn_load()
+
 	result = db.fn_compare_database(dict_param, database, printlabel)
 	shown_result = ""
 	for x in range(len(result)):
-		shown_result += "\n%s identified as %s with a factor of %f" % (dict_param["chunk_param"][x]["sample_name"], result[x][0]["sample_name"], result[x][1])
+		shown_result += "\n%s identified as %s with a factor of %f" % (dict_param["chunk_param"][x]["sample_name"], result[x][0][0]["sample_name"], result[x][0][1])
 	update_GUI(shown_result, printlabel)
 

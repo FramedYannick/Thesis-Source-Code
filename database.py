@@ -80,13 +80,14 @@ def fn_compare_chunk(chunk1, chunk2):
 	#get the significance levels for the peaks
 	from functions import fn_sign
 	chunk1 = fn_sign(chunk1)
+
 	from copy import deepcopy
 	temp2 = deepcopy(chunk2["chunk_values"])
 	CCF = 1#/(abs(len(chunk1["chunk_values"])-len(chunk2["chunk_values"]))+1)
 	#find most fitting function for the most sign curve of chunk1
 	from functions import fn_SSD
 	for x in range(len(chunk1["chunk_sign"][:len(temp2)])):
-		if chunk1["chunk_sign"][x] != 0.0:
+		if chunk1["chunk_sign"][1] != 0.0:
 			curve1 = chunk1["chunk_values"][chunk1["chunk_sign"][x][0]]
 			alpha1 = chunk1["peak_info"][x]["alpha"]
 			best = [0,0] #curve, SSD
@@ -108,14 +109,14 @@ def fn_compare_database(dict_param, database, printlabel):
 		update_GUI("no file present", printlabel)
 	else:
 		#run the code for each chunk with index X
-		results = []
+		dict_results = []
 		for x in range(len(dict_param["chunk_param"])):
-			best = ["name", 0]
+			chunk_results = []
 			#compare against each chunk in the database
 			for y in range(len(database)):
 				corr = fn_compare_chunk(dict_param["chunk_param"][x], database[y])
-				if (corr > best[1]):
-					best = [database[y], corr]
-			results.append(best)
-	return results
+				chunk_results.append([database[y], corr])
+			chunk_results.sort(key=lambda x: x[1],reverse=True)
+			dict_results.append(chunk_results)
+	return dict_results
 

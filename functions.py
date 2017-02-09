@@ -11,13 +11,6 @@ def fn_check_dir(dir,file):
 	return (os.path.isfile(dir + '\\' + file))
 
 
-#make an unique version of a list
-def fn_unique(list):
-	unique = []
-	[unique.append(item) for item in list if item not in unique]
-	return unique
-
-
 #find the required integrals on a curve; given the peaks
 def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	# use the indices to find the integral limits
@@ -25,10 +18,10 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	for x in peaks_ind:
 		y, z = x, x  # y for the left bound; z for the right
 		#while (chunk_max[y] > 0.505630659713 * chunk_max[x] and y > 2 or chunk_max[y] > chunk_noise):
-		while chunk_max[y] > chunk_noise*6:
+		while chunk_max[y] > chunk_noise*4:
 			y = y - 1
 		#while (chunk_max[z] > 0.4505630659713 * chunk_max[x] and z < len(chunk_max)-2 or chunk_max[z] > chunk_noise):
-		while chunk_max[z] > chunk_noise*6:
+		while chunk_max[z] > chunk_noise*4:
 			z = z + 1
 		integral_limits.append([y, z])
 
@@ -71,6 +64,19 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	for x in remove:
 		peaks_ind.pop(x)
 		integral_limits.pop(x)
+		
+	#correct for single dot integrals
+	remove = []
+	for x in range(len(peaks_ind)):
+		if integral_limits[x][0] == integral_limits[x][1]:
+			remove.append(x)
+	unique = []
+	[unique.append(item) for item in remove if item not in unique]
+	remove = sorted(unique, reverse=True)
+	for x in remove:
+		peaks_ind.pop(x)
+		integral_limits.pop(x)
+	
 
 	"""""
 	#combine touching integrals - not used for the moment
@@ -85,7 +91,7 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 		peaks_ind.pop(x)
 		integral_limits.pop(x)
 	"""
-	return [integral_limits, peaks_ind]
+	return integral_limits, peaks_ind
 
 
 #calculate the integration curves
@@ -246,12 +252,6 @@ def fn_sign(chunk):
 	return chunk
 
 """
-#compare two functions - used for database reference search
-def fn_compare_fn(curve1, curve2):
-	import numpy as np
-	#here you can play with the diff types of correlations
-	corr = np.trapz(abs(np.array(curve1) - np.array(curve2)))
-	return corr
 
 def fn_compare_fn(x,y):
 	import numpy as np
@@ -259,9 +259,9 @@ def fn_compare_fn(x,y):
 	zy = (y - np.mean(y)) / np.std(y, ddof=1)
 	r = np.sum(zx * zy) / (len(x) - 1)
 	return r**2
-"""
 
-def fn_compare_fn(x_list, y_list):
+
+def fn_compare_fn(x_list, y_list): #using rsquared
 	import math
 	n = len(x_list)
 	x_bar = sum(x_list)/n
@@ -274,3 +274,102 @@ def fn_compare_fn(x_list, y_list):
 	if math.isnan(r**2):
 		r=0.99
 	return r**2
+"""
+
+#compare two functions - used for database reference search
+def fn_compare_fn(curve1, curve2):
+	import numpy as np
+	import math
+	#here you can play with the diff types of correlations
+	corr = np.trapz(abs(np.array(curve1) - np.array(curve2)))/max(abs(np.trapz(curve1)), abs(np.trapz(curve2)))
+	if math.isnan(corr):
+		corr = 0.0
+	if corr > 1.0:
+		corr = 1.0
+	return 1.0-corr
+
+
+
+####################################################################################################"
+def fn_vclist(dir):
+	vclist = []
+	if (fn_check_dir(dir[:dir.find('pdata')], r'\vclist')):
+		vclist_file = open(dir[:dir.find('pdata')] + r'\vclist', 'r').readlines()
+		for x in vclist_file:
+			vclist.append(int(x))
+	return vclist
+
+def fn_fqlist(dir, B0_hz):
+	fqlist = []
+	fqlist_ppm = []
+	if (fn_check_dir(dir[:dir.find('pdata')], r'\fq0list')):
+		fqlist_file = open(dir[:dir.find('pdata')] + r'\fq0list', 'r').readlines()
+		for x in range(len(fqlist_file)):
+			if x != 0:
+				fqlist.append(float(fqlist_file[x]))
+				fqlist_ppm.append(float(fqlist_file[x]) / B0_hz)
+	return fqlist, fqlist_ppm
+
+def fn_parameters(dic, dic2, dic3):
+	B0_hz = float(dic2[dic2.find(r'$SFO1=') + 7:dic2.find('##$SFO2')])
+	# SO1_hz = float(dic2[dic2.find(r'$O1=') + 5:dic2.find('##$O2')])
+	SW_hz = float(dic['procs']['SW_p'])
+	SW_ppm = SW_hz / B0_hz
+	duplet_ppm = 15 / B0_hz  # from Karplus
+	chunk_num = int(int(dic3[dic3.find(r'$TD=') + 5:dic3.find(r'$TD=') + 7]) / 13)
+	return B0_hz, SW_ppm, SW_hz, duplet_ppm, chunk_num
+
+def fn_max_curve(chunk):
+	import numpy as np
+	chunk_max = []
+	for x in np.array(chunk).T:
+		chunk_max.append(np.max(x))
+	return chunk_max
+	
+#make an unique version of a list
+def fn_unique(list):
+	unique = []
+	[unique.append(item) for item in list if item not in unique]
+	return unique
+	
+
+#calculate the integration curves
+def fn_integrate_new(chunk, chunk_integrals, chunk_peak_ind, SW_ppm):
+	import numpy as np
+	chunk_values = []
+	chunk_peak_ind_ppm = []
+	for y in range(len(chunk_peak_ind)):  # loop over all indices
+		x = chunk_peak_ind[y]
+		chunk_peak_ind_ppm.append((len(chunk[0]) - x) / len(chunk[0]) * SW_ppm)  # ppm calculation of the integral
+		temp = []
+		for row in chunk:
+			temp.append(np.trapz(row[chunk_integrals[y][0]:chunk_integrals[y][1]]))
+		chunk_values.append(temp)
+	# normalise per chunk
+	chunk_values = chunk_values / np.max(chunk_values)
+	
+	#filter out the bad ones
+	remove = []
+	for x in range(len(chunk_peak_ind)):
+		#different filter conditions
+		if np.max(chunk_values[x]) < 0.015:
+			remove.append(x)
+			
+			
+			
+	remove = sorted(fn_unique(remove), reverse=True)
+	for x in remove:
+		chunk_values = np.delete(chunk_values,x,axis=0)
+		chunk_integrals.pop(x)
+		chunk_peak_ind.pop(x)
+		chunk_peak_ind_ppm.pop(x)
+	return chunk_values, chunk_integrals, chunk_peak_ind, chunk_peak_ind_ppm
+
+#find the subplot number
+def fn_calc_plots (list):
+	number = len(list)
+	dict = {"1": 111, "2": 211, "3":311, "4":221,"5":321,"6":321,"7":331,"8":331,"9":331}
+	if number > 9:
+		return "error"
+	else:
+		return dict[str(number)]

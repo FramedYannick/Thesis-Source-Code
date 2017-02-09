@@ -3,7 +3,6 @@ designed by Dandois to contain all plotting functions
 
 """
 
-
 #find the subplot number
 def fn_calc_plots (list):
 	number = len(list)
@@ -67,5 +66,16 @@ def fn_plot_chunks(chunk_list, mtlist=[0.00863415, 0.0172683, 0.02590245, 0.0345
 		ax.set_title(x["sample_name"])
 		for y in range(len(x["chunk_values"])):
 			plt.plot(mtlist, x["chunk_values"][y], label=(x["sample_name"][y] + " " + str(x["chunk_peak_ind_ppm"][y])))
+	plt.show()
+	return
+
+#show multiple chunks on one graph; each in a different coloer - should be a list of chunk_parma
+def fn_plot_chunks_OG(chunk_list, mtlist=[0.00863415, 0.0172683, 0.02590245, 0.0345366, 0.04317075, 0.0518049, 0.06043905, 0.0690732, 0.07770735000000001, 0.0863415, 0.09497565, 0.1036098, 0.11224395000000001]):
+	import matplotlib.pyplot as plt
+	plt.figure()
+	for x in range(len(chunk_list)):
+		for y in chunk_list[x]["chunk_values"]:
+			plt.plot(y,["r-","g-","b-","o-"][x],label=chunk_list[x]["sample_name"])
+	plt.legend()
 	plt.show()
 	return
