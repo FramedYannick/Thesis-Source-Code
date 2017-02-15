@@ -4,32 +4,25 @@ designed by Dandois for saving all the seperate small functions
 
 """
 
-
-#check if a file exists in a location
-def fn_check_dir(dir,file):
-	import os.path
-	return (os.path.isfile(dir + '\\' + file))
-
-
-#find the required integrals on a curve; given the peaks
+# find the required integrals on a curve; given the peaks
 def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	# use the indices to find the integral limits
 	integral_limits = []
 	for x in peaks_ind:
 		y, z = x, x  # y for the left bound; z for the right
-		#while (chunk_max[y] > 0.505630659713 * chunk_max[x] and y > 2 or chunk_max[y] > chunk_noise):
-		while chunk_max[y] > chunk_noise*4:
+		# while (chunk_max[y] > 0.505630659713 * chunk_max[x] and y > 2 or chunk_max[y] > chunk_noise):
+		while chunk_max[y] > chunk_noise * 4:
 			y = y - 1
-		#while (chunk_max[z] > 0.4505630659713 * chunk_max[x] and z < len(chunk_max)-2 or chunk_max[z] > chunk_noise):
-		while chunk_max[z] > chunk_noise*4:
+		# while (chunk_max[z] > 0.4505630659713 * chunk_max[x] and z < len(chunk_max)-2 or chunk_max[z] > chunk_noise):
+		while chunk_max[z] > chunk_noise * 4:
 			z = z + 1
 		integral_limits.append([y, z])
 
-	#correct for identical integrals
+	# correct for identical integrals
 	remove = []
-	for x in range(len(peaks_ind)-1):
-		if integral_limits[x] == integral_limits[x+1]:
-			remove.append(x+1)
+	for x in range(len(peaks_ind) - 1):
+		if integral_limits[x] == integral_limits[x + 1]:
+			remove.append(x + 1)
 	unique = []
 	[unique.append(item) for item in remove if item not in unique]
 	remove = sorted(unique, reverse=True)
@@ -64,8 +57,8 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	for x in remove:
 		peaks_ind.pop(x)
 		integral_limits.pop(x)
-		
-	#correct for single dot integrals
+
+	# correct for single dot integrals
 	remove = []
 	for x in range(len(peaks_ind)):
 		if integral_limits[x][0] == integral_limits[x][1]:
@@ -76,7 +69,6 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	for x in remove:
 		peaks_ind.pop(x)
 		integral_limits.pop(x)
-	
 
 	"""""
 	#combine touching integrals - not used for the moment
@@ -94,78 +86,6 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	return integral_limits, peaks_ind
 
 
-#calculate the integration curves
-def fn_integrate(chunk, chunk_integrals, chunk_peak_ind, SW_ppm):
-	import numpy as np
-	chunk_values = []
-	chunk_peak_ind_ppm = []
-	for y in range(len(chunk_peak_ind)):  # loop over all indices
-		x = chunk_peak_ind[y]
-		chunk_peak_ind_ppm.append((len(chunk[0]) - x) / len(chunk[0]) * SW_ppm)  # ppm calculation of the integral
-		temp = []
-		for row in chunk:
-			temp.append(np.trapz(row[chunk_integrals[y][0]:chunk_integrals[y][1]]))
-		chunk_values.append(temp)
-	# normalise per chunk
-	chunk_values = chunk_values / np.max(chunk_values)
-	return chunk_values, chunk_peak_ind_ppm
-
-
-#perform duplet and triplet filtering; also filter
-def fn_integral_filter(chunk_param, duplet_ppm):
-	import numpy as np
-	remove = []
-	redo_integrals = False
-	#compare peak #x with #(x+1)
-	for x in range(len(chunk_param["chunk_peak_ind_ppm"])-1):
-		#ppm diference
-		delta_ppm = abs((chunk_param["chunk_peak_ind_ppm"][x+1] - chunk_param["chunk_peak_ind_ppm"][x])) < duplet_ppm
-		#find the correlation between both
-		PCC = abs(fn_correlation(chunk_param["chunk_values"][x], chunk_param["chunk_values"][x+1])) > 0.9
-
-		if(delta_ppm and PCC):
-			chunk_param["chunk_integrals"][x+1] = [chunk_param["chunk_integrals"][x][0],chunk_param["chunk_integrals"][x+1][1]]
-			#stop the cycle and restart for x
-			remove.append(x)
-			redo_integrals = True
-
-		#remove the water peak
-		if abs(chunk_param["chunk_peak_ind_ppm"][x] - 4.7) < 0.02:
-			remove.append(x)
-
-		#remove the to low peaks
-		if np.max(chunk_param["chunk_values"][x]) < 0.015:
-			remove.append(x)
-
-
-	#remove the data from the filtered out peaks
-	remove = sorted(fn_unique(remove), reverse=True)
-	for x in remove:
-		chunk_param["chunk_values"] = np.delete(chunk_param["chunk_values"],x,axis=0)
-		chunk_param["chunk_peak_ind_ppm"].pop(x)
-		chunk_param["peak_info"].pop(x)
-		chunk_param["chunk_integrals"].pop(x)
-		chunk_param["chunk_peak_ind"].pop(x)
-	return chunk_param, redo_integrals
-
-
-#remove the lowest 1.5%
-def fn_thresholt_filter(chunk_param):
-	import numpy as np
-	remove = []
-	for x in range(len(chunk_param["chunk_peak_ind_ppm"])):
-		if np.max(chunk_param["chunk_values"]) < 0.02:
-			remove.append(x)
-		remove = sorted(fn_unique(remove), reverse=True)
-	for x in remove:
-		chunk_param["chunk_values"].tolist().pop(x)
-		chunk_param["chunk_peak_ind_ppm"].pop(x)
-		chunk_param["peak_info"].pop(x)
-		chunk_param["chunk_integrals"].pop(x)
-		chunk_param["chunk_peak_ind"].pop(x)
-	return chunk_param
-
-
 #calculate the correlation coeff - will calculate linearity if only one list is given
 def fn_correlation (list, list2 = []):
 	from numpy import corrcoef
@@ -176,17 +96,6 @@ def fn_correlation (list, list2 = []):
 	from scipy.stats import pearsonr
 	correlation = pearsonr(list,list2)[1]
 	return correlation
-
-
-#calculate the SSD
-def fn_SSD (listA, listB=[]):
-	import numpy as np
-	if listB == []:
-		for x in range(len(listA)):
-			listB.append(0.)
-	data = np.array(listA) - np.array(listB)
-	result = np.sum(np.abs((np.mean(data)-data)))
-	return result
 
 
 #calculate the rico between the first and last point
@@ -209,7 +118,6 @@ def fn_noise_filter(chunk_peak_ind, chunk_max):
 		if chunk_max[x] > limit:
 			temp.append(x)
 	return temp, limit
-
 
 #function for reading the title file
 def fn_read_title(dir):
@@ -241,56 +149,6 @@ def fn_read_title(dir):
 	return sample_name, extra_info, order
 
 
-#calculate the significance of all functions
-def fn_sign(chunk):
-	import numpy as np
-	sign = []
-	for x in range(len(chunk["chunk_values"])):
-		sign.append([x, np.trapz(chunk["chunk_values"][x])])
-	sign.sort(key=lambda x: x[1],reverse=True)
-	chunk["chunk_sign"] = sign
-	return chunk
-
-"""
-
-def fn_compare_fn(x,y):
-	import numpy as np
-	zx = (x - np.mean(x)) / np.std(x, ddof=1)
-	zy = (y - np.mean(y)) / np.std(y, ddof=1)
-	r = np.sum(zx * zy) / (len(x) - 1)
-	return r**2
-
-
-def fn_compare_fn(x_list, y_list): #using rsquared
-	import math
-	n = len(x_list)
-	x_bar = sum(x_list)/n
-	y_bar = sum(y_list)/n
-	x_std = math.sqrt(sum([(xi-x_bar)**2 for xi in x_list])/(n-1))
-	y_std = math.sqrt(sum([(yi-y_bar)**2 for yi in y_list])/(n-1))
-	zx = [(xi-x_bar)/x_std for xi in x_list]
-	zy = [(yi-y_bar)/y_std for yi in y_list]
-	r = sum(zxi*zyi for zxi, zyi in zip(zx, zy))/(n-1)
-	if math.isnan(r**2):
-		r=0.99
-	return r**2
-"""
-
-#compare two functions - used for database reference search
-def fn_compare_fn(curve1, curve2):
-	import numpy as np
-	import math
-	#here you can play with the diff types of correlations
-	corr = np.trapz(abs(np.array(curve1) - np.array(curve2)))/max(abs(np.trapz(curve1)), abs(np.trapz(curve2)))
-	if math.isnan(corr):
-		corr = 0.0
-	if corr > 1.0:
-		corr = 1.0
-	return 1.0-corr
-
-
-
-####################################################################################################"
 def fn_vclist(dir):
 	vclist = []
 	if (fn_check_dir(dir[:dir.find('pdata')], r'\vclist')):
@@ -316,7 +174,7 @@ def fn_parameters(dic, dic2, dic3):
 	SW_hz = float(dic['procs']['SW_p'])
 	SW_ppm = SW_hz / B0_hz
 	duplet_ppm = 15 / B0_hz  # from Karplus
-	chunk_num = int(int(dic3[dic3.find(r'$TD=') + 5:dic3.find(r'$TD=') + 7]) / 13)
+	chunk_num = int(int(dic3[dic3.find(r'$TD=')+5:][:dic3[dic3.find(r'$TD=')+5:].find("\n")])/13)
 	return B0_hz, SW_ppm, SW_hz, duplet_ppm, chunk_num
 
 def fn_max_curve(chunk):
@@ -373,3 +231,82 @@ def fn_calc_plots (list):
 		return "error"
 	else:
 		return dict[str(number)]
+
+def fn_compare_curves(list1, list2): #NOT OPTIMAL AT ALL - ASK DAWYNDT
+	from copy import deepcopy
+	from numpy import trapz
+	list1_c = deepcopy(list1)
+	list2_c = deepcopy(list2)
+	CCF = 1.
+	#sort list1 on importance
+	list1_c.sort(key=lambda x: x.size,reverse=True)
+	# find best comparable curve and save the data
+	for x in range(min(len(list1_c), len(list2_c))):
+		curve1 = list1_c[x]
+		best = 0
+		best_curve = 0.
+		for curve2 in list2_c:
+			temp = curve1.fn_compare(curve2)
+			if temp > best:
+				best = temp
+				best_curve = curve2
+		if best_curve != 0.:
+			list2_c.remove(best_curve)
+			CCF *= best
+	list1_c = list1_c[min(len(list1), len(list2))+1:]
+	# punish for the remaining curves
+	tot = 1
+	for x in list1_c + list2_c:
+		tot += trapz(x.data)
+	return CCF/tot
+
+
+#file checker
+def fn_check_dir(dir,file):
+	import os.path
+	return (os.path.isfile(dir + '\\' + file))
+
+#folder checker
+def fn_check_folders(dir):
+	from glob import glob
+	#reform the end of dir
+	if "\\" in dir:
+		dir = dir.replace("\\", "/")
+	if dir[len(dir)-1] != "/":
+		dir += "/"
+	temp_list = glob(dir+"*/")
+	dir_list = []
+	for x in temp_list:
+		if x[len(x)-2] == "2" and fn_check_dir(x+"pdata\\1","2ii") and fn_check_dir(x+"pdata\\1","2rr"):
+			dir_list.append(x)
+		if x[len(x) - 2] == "3" and fn_check_dir(x + "pdata\\1", "2ii") and fn_check_dir(x + "pdata\\1", "2rr"):
+			#if a 3 is present; use the 3 instead of the 2
+			dir_list.append(x)
+			dir_list.remove(x[:len(x) - 2]+"2"+x[len(x) - 1:])
+	return dir_list
+
+def fn_progress_gen(num):
+	string = format("Compiling database - %s%s" % (str(num * 100), r"%"))
+	return string
+
+# get the settings from the config
+def fn_settings():
+	Settings = {}
+	import config
+	Settings["Experiment_Directory"] = config.Experiment_Directory
+	Settings["Database_Directory"] = config.Database_Directory
+
+	Settings["plot_exp"] = config.plot_exp
+	Settings["plot_chunk"] = config.plot_chunk
+	Settings["plot_values"] = config.plot_values
+
+	Settings["am_norm"] = config.am_norm
+
+	Settings["gp_chunks"] = config.gp_chunks
+	Settings["gp_print"] = config.gp_print
+
+	#GUI settings - not in config
+	Settings["Background"] = "blue"
+	Settings["Foreground"] = "white"
+	Settings["GUI_width"] = 9	#9 is the minimum!!!
+	return Settings

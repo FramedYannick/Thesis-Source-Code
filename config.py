@@ -1,18 +1,26 @@
 """
 
 custom settings file
-to be implemented with future possibility towards exe!
 CLOSE PROGRAM AFTER CHANGING SETTINGS FOR UPDATING
 
 """
 
-Default_Directory = r"D:\DATA\master2016\Test_500\2\pdata\1"
-Database_Directory = r"D:\DATA\master2016\DATABASE"	#compile the database with this data
+Experiment_Directory = r"D:\DATA\master2016\Samples\6\pdata\1"			# The default experiment location
+Database_Directory = r"D:\DATA\master2016\DATABASE"				# Compile the database with this data; the db is also stored here
 
-#parameters for peak picking
-Default_inter_peak_distance = 0.0005                      #minimum distance between peaks (in ppm)
-Default_minpeakhight = 0.01                               #percentage of biggest peak each peak must have to be seen as a peak
-Default_show = True                                       #should a plot of the peaks be shown (default = false)
-Default_mode = True                                       #True for integrals; false for intensities
+#parameters
+	#plots
+plot_exp = False					# will plot each chunk next to each other to show which chunks are noisy
+plot_chunk = False					# plot the chunk with its determined sacharide in the database
+plot_values = False					# will plot each chunk on different plot with ppm's given to each curve
 
-#parameters for database comparison
+	#Alternate methods
+am_norm = True
+
+
+
+	#General parameters
+gp_chunks = []						# on All by default; change in the GIU if requested is the smart move
+gp_print = 3						# the default amount of sacharides returned
+
+
