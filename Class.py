@@ -115,9 +115,35 @@ class Experiment(object):
 			x = chunks[z]  # x is a chunk object
 			ax = plt.subplot(num + z)
 			ax.set_title(x.sample_name)
+			ax.set_ylabel("Intensity (rel.)")
+			ax.set_xlabel("Mixing Time (s)")
 			for y in (x.content.content):  # y is a curve object
 				plt.plot(self.mtlist, y.data, label=(x.sample_name + " " + str(y.ppm)))
 		plt.show()
+		return plt
+
+	def fn_compare(self, data):
+		# get the chunklist
+		temp_list = self.Settings["gp_chunks_list"]
+		if type(temp_list) == list:
+			if len(temp_list) == 0:
+				temp_list2 = range(len(self.chunks))
+			else:
+				temp_list2 = temp_list
+		elif type(temp_list) == str:
+			temp_list = temp_list.split(",")
+			temp_list2 = []
+			for x in temp_list:
+				temp_list2.append(int(x))
+		else:
+			self.status = False
+		comparison = []
+		self.Settings["gp_chunks_list"] = temp_list2
+		for x in temp_list2:
+			comp = self.chunks[x].fn_compare(data)
+			comparison.append([x,comp])
+		self.result = comparison
+		return comparison
 
 
 
@@ -145,22 +171,33 @@ class Chunk(object):
 
 		#find the max curve
 		self.max_curve = fn_max_curve(self.data)
+		print(self.max_curve)
 
-		#calculate the peaks	chunk_peak_ind = pk.indexes(self.max_curve, thres = 0.0)
-		temp_indices = detect_peaks(self.max_curve,show=False)
+		if self.Settings["am_int"]:
+			#from scipy.integrate import cumtrapz
+			#temp = cumtrapz(self.max_curve)
+			# use a min hight filter
+			from functions import fn_alt_integrals
+			self.integrals, self.indices, self.noise = fn_alt_integrals(self.max_curve)
 
-		# remove super low peaks (background noise)
-		self.indices, self.noise = fn_noise_filter(temp_indices, self.max_curve)
 
-		#find the integral limits
-		self.integrals, self.indices = fn_integrals(self.max_curve, self.indices, self.noise)
+
+		if not self.Settings["am_int"]:
+			#calculate the peaks	chunk_peak_ind = pk.indexes(self.max_curve, thres = 0.0)
+			temp_indices = detect_peaks(self.max_curve,show=False)
+
+			# remove super low peaks (background noise)
+			self.indices, self.noise = fn_noise_filter(temp_indices, self.max_curve)
+
+			#find the integral limits
+			self.integrals, self.indices = fn_integrals(self.max_curve, self.indices, self.noise)
 
 		#calculate the integral values
 		temp_values, self.integrals, self.indices, self.indices_ppm = fn_integrate_new(self.data, self.integrals, self.indices, self.SW_ppm)
 		#set the content using the Values class
 		self.content = Values(temp_values, self.indices, self.indices_ppm, self.sample_name, self.mtlist, self.printlabel, self.Settings)
 
-	def fn_plot(self, second = []):
+	def fn_plot(self, second = [], text="",save=''):
 		import numpy as np
 
 		chunk_list = [self]
@@ -171,21 +208,31 @@ class Chunk(object):
 
 		import matplotlib.pyplot as plt
 		plt.figure()
+		ax = plt.subplot()
+		bord = [0,1]
 		for x in range(len(chunk_list)):
 			for y in range(len(chunk_list[x].content.content)):
 				if y == 0:
-					plt.plot((np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x], label=chunk_list[x].sample_name)
+					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x], label=chunk_list[x].sample_name)
 				else:
-					plt.plot((np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x])
+					plt.plot(self.mtlist(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x])
+		if text != "":
+			plt.text(10,0.8,text, fontsize=15)
+		ax.set_ylabel("Intensity (rel.)")
+		ax.set_xlabel("Mixing Time (s)")
 		plt.legend()
-		plt.show()
+		if save != "":
+			plt.savefig(save)
+		else:
+			plt.show()
 
-	def fn_compare(self, database):
+	def fn_compare(self, database, sort=True):
 		comparison = []
 		for chunk in database.content:
 			new = self.content.fn_compare(chunk.content)
 			comparison.append([new,chunk])
-		comparison.sort(key=lambda x: x[0],reverse=True)
+		if sort:
+			comparison.sort(key=lambda x: x[0],reverse=True)
 
 		if self.Settings["plot_chunk"]:
 			temp = []
@@ -193,13 +240,6 @@ class Chunk(object):
 				temp.append(x[1])
 			self.fn_plot(temp)
 
-		# print out the results
-		if type(self.Settings["gp_print"]) == int and 0 < self.Settings["gp_print"] < 4:
-			text = self.sample_name + "\n------------"
-			for x in range(min(self.Settings["gp_print"], len(comparison))):
-				text = text + format("\n%f: %s" %(comparison[x][0], comparison[x][1].sample_name))
-			from GUI_mainframe import update_GUI
-			update_GUI(text, self.printlabel)
 		return comparison
 
 
@@ -238,31 +278,47 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 		ax.set_title(self.sample_name)
 		for x in range(len(self.content)):
 			plot_label = str(self.content[x].ppm)[:5] + " ppm"
-			plt.plot(self.content[x].data, label=plot_label)
+			plt.plot(self.mtlist, self.content[x].data, label=plot_label)
+		ax.set_ylabel("Intensity (rel.)")
+		ax.set_xlabel("Mixing Time (s)")
 		plt.legend()
 		plt.show()
+		return plt
 
 	#compare two chunks between each other
 	def fn_compare(self, second):
-		from functions import fn_compare_curves
-		# compare alpha curves first - they have a higher accuracy - must each be normalised!!!
-		#set empty variables
-		alphas, alphas_2, betas, betas_2 = [], [], [], []
-		# sort the curves in two lists
-		for curve in self.content:
-			if curve.alpha:
-				alphas.append(curve)
-			else:
-				betas.append(curve)
-		for curve in second.content:
-			if curve.alpha:
-				alphas_2.append(curve)
-			else:
-				betas_2.append(curve)
-		alpha_comparison = fn_compare_curves(alphas, alphas_2)
-		beta_comparison = fn_compare_curves(betas, betas_2)
+		from copy import deepcopy
+		from numpy import trapz
+		if len(self.content) <= len(second.content):
+			list1_c = deepcopy(self.content)
+			list2_c = deepcopy(second.content)
+		else:
+			list1_c = deepcopy(second.content)
+			list2_c = deepcopy(self.content)
 
-		return alpha_comparison*beta_comparison
+		CCF = 1.
+		# sort list1 on importance
+		list1_c.sort(key=lambda x: x.size, reverse=True)
+		# find best comparable curve and save the data
+		for x in range(len(list1_c)):
+			curve1 = list1_c[x]
+			best = -1.
+			best_curve = 0.
+			for curve2 in list2_c:
+				temp = curve1.fn_compare(curve2)
+				if temp > best:
+					best = temp
+					best_curve = curve2
+			if best_curve != 0.:
+				list2_c.remove(best_curve)
+				CCF *= best
+			else: print('error')
+		# punish for the remaining curves
+		tot = 1
+		for x in list2_c:
+			tot += trapz(x.data)
+		return CCF / tot
+
 
 
 
@@ -280,31 +336,32 @@ class Curve(object): #use to collect all the information on each peak
 		from numpy import trapz
 
 		#calculate required information which is different
-		from functions import fn_correlation, fn_rico
+		from functions import fn_rico
 		from numpy import mean, trapz
 		self.size = trapz(self.data)
 		self.ok = (mean(self.data)) != 0. and trapz(self.data) > 0.2
 		self.alpha = (self.ppm > 4.25) #and (self.data.max() > 0.3)
-		self.linearity = fn_correlation(self.data)
 		self.rico = fn_rico(self.data, mtlist)
 
 	def fn_compare(self, second):
 		import numpy as np
 		import math
 		# here you can play with the diff types of correlations
-		maxi = max(np.trapz(np.abs(self.data)), np.trapz(np.abs(second.data)))
 		if self.Settings["am_norm"]:
-			curve1 = self.data/max(self.data)
-			curve2 = second.data/max(second.data)
-			corr = np.trapz(np.abs(np.array(self.data) - np.array(second.data))) / maxi + np.trapz(np.abs(np.array(curve1) - np.array(curve2)))
+			# use the Frechet distance instead of the normal curve
+			from functions import fn_frechet
+			corr = (fn_frechet(self.data, second.data, self.mtlist))
+
 		else:
+			maxi = max(np.trapz(np.abs(self.data)), np.trapz(np.abs(second.data)))
 			corr = np.trapz(np.abs(np.array(self.data) - np.array(second.data))) / maxi
-		if math.isnan(corr):
+		if math.isnan(corr) or corr < 0.0000002:
 			corr = 0.0
 		if corr > 1.0:
 			corr = 1.0
+		corr = 1.0 - corr
 		#returns correlation% - 1 is perfect!
-		return 1.0 - corr
+		return corr
 
 
 ########################################################################################################################
@@ -335,6 +392,7 @@ class Database(object):
 		if (fn_check_dir(self.dir, r"\Database.p")):
 			self.content = load(open(self.dir + r"\Database.p", "rb"))
 			update_GUI("Loaded the Database from given location.", self.printlabel)
+			self.fn_override_settings(self.Settings)
 		else:
 			self.content = []
 			update_GUI("No database file was found in the given location.", self.printlabel)
@@ -375,7 +433,6 @@ class Database(object):
 
 			#load in the experiment
 			exp = Experiment(dir_list[y]+"\\pdata\\1", "ignore")
-			print(dir_list[y])
 			for chunk in exp.chunks:
 				self.content.append(chunk)
 
@@ -390,13 +447,20 @@ class Database(object):
 				file.write(str(x) + "\n")
 		self.status = True
 
-	def fn_plot(self, list):
+	def fn_plot(self, list1):
 		temp_list = []
 		for chunk in data.content:
-			if chunk.sample_name in list:
+			if chunk.sample_name in list1:
 				temp_list.append(chunk)
 		if len(temp_list) != 0:
 			temp_list[0].fn_plot(temp_list[1:])
+
+	def fn_override_settings(self, Settings):
+		self.Settings = Settings
+		for x in self.content:
+			x.Settings = Settings
+			for y in x.content.content:
+				y.Settings = Settings
 
 
 
@@ -439,11 +503,61 @@ if __name__ == "__main__":
 	"""
 
 	from config import Database_Directory
-	data = Database(Database_Directory, "testing")
-	#data.fn_plot(["b-Glucopyr.", "b-Xylopyr."])
+	from functions import fn_settings
+	data = Database(Database_Directory, "testing", fn_settings())
+	#data.fn_plot(["a-Mannopyr.", "a-Rhamnopyr."])
+	#data.fn_plot(["b-Mannopyr.", "b-Rhamnopyr."])
+	#data.fn_plot(["a-Galactopyr.", "b-Arabinopyr."])
 
 
-	test = Experiment(r"D:\DATA\master2016\Samples\6\pdata\1", "testing")
+	test = Experiment(r"D:\DATA\master2016\Samples\32\pdata\1", "testing")
+	#comp = test.chunks[0].fn_compare(data)
+	#comp = test.chunks[5].fn_compare(data)
 
-	comp = test.chunks[2].fn_compare(data)
-	comp = test.chunks[5].fn_compare(data)
+
+	if False:	#perform cluster analysis
+		data.fn_compile()
+		title = []
+		matrix = []
+		for z in range(len(data.content)):
+			x = data.content[z]
+			comp = x.fn_compare(data, False)
+			temp = []
+			for q in range(len(comp)):
+				y = comp[q]
+				temp.append(1-y[0])
+				if (0.99>y[0]>0.5) and z < q and True:
+					print(y[0])
+					x.fn_plot(y[1], r"$\delta$: " + str(round(y[0],2))) #, format("C:/Users/yannick/Documents/_Documenten/UGent/Thesis/PicDump/Frechet/%s.png" %(x.sample_name.replace(".","") +" - " + y[1].sample_name.replace(".",""))))
+				if z != q and y[0] == 1.0:
+					raise ValueError('PAAADUUUUUMMMmmmmm TSSSSsssss... This is a boeboe.')
+			matrix.append(temp)
+			title.append(x.sample_name)
+		print(title)
+		for x in matrix:
+			print(x)
+		import numpy as np
+		print(np.mean(matrix))
+
+	if False:
+		for x in data.content:
+			if x.sample_name == "b-Rhamnopyr.":
+				for y in data.content:
+					if y.sample_name == "b-Mannopyr.":
+						print(len(x.content.content), len(y.content.content))
+						print(x.content.fn_compare(y.content))
+						print("----------------")
+						print(y.content.fn_compare(x.content))
+
+	if False:
+		from Proces_katelijne import katelijne
+		from functions import fn_settings
+		kat = katelijne("testing", fn_settings())
+		for x in kat:
+			if x.sample_name == "b-Rhamnopyr.":
+				for y in data.content:
+					if y.sample_name == "a-Rhamnopyr.":
+						print(type(x), type(y))
+						print(x.content.fn_compare(y.content))
+						print("----------------")
+						print(y.content.fn_compare(x.content))

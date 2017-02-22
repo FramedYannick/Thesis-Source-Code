@@ -10,8 +10,8 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-For the analysis a 700MHz NMR-spectrometer was used. The only channel needed is a Hydrogen-channel.
-This processing script uses Python 3.5; it was made using Anaconda. The main required modules are:
+For the analysis a 700MHz NMR-spectrometer was used. However the software will accept other frequencies. The only channel needed is a Hydrogen-channel.
+This processing script uses Python 3.5 and was made using Anaconda. The main required modules are:
 
 ```
 NMRGlue			-	http://www.nmrglue.com/
@@ -21,23 +21,14 @@ Detect Peaks	-	https://github.com/demotu/BMC - Marcos Duarte
 
 ```
 
-### Installing 
+### Installing (only required once)
 
-A step by step series of examples that tell you have to get a development env running
-
-Say what the step will be
-
-```
-Give the example
-```
-
-And repeat
+A step by step series of examples that tell you have to get a development environment running.
+It should come packaged in a **.exe** file.
 
 ```
-until finished
+The program has not been packaged yet. This will be done soon...
 ```
-
-End with an example of getting some data out of the system or using it for a little demo
 
 ## Usage and setup for analysis
 
@@ -85,19 +76,50 @@ This will mean the half of your spectra is useless; however this is needed to en
 
 ### Setup an experiment
 
-This will be discussed extensively in a new file; however, a short sumary:
+This will be discussed extensively in a new file; however, a short summary:
 In general; you must set P6; PLW10; SPW2 AND SPW29 for each new sample (all are dependent of the 90° pulse).
 You must also set the TD; this will be thirteen times the amount of frequencies you want to measure.
 In the fqlist; you must set all frequencies that you want to measure; however you must enter each frequency THIRTEEN times!
 
+### Process an experiment
 
-### Setup the processing tools
+A part of the processing must still be done using the [Topspin] (https://www.bruker.com/products/mr/nmr/nmr-software/software/topspin/overview.html) from Bruker.
+Using this; you must process the data in the f2 dimension; the minimum required commands are:
 
 ```
-Give an example
+xf2; apk2d; abs2
 ```
 
-## Examples
+However; due to the harder phasing upon using the experiment on multiple frequencies; it might be beneficial to do the phasing manually.
+CAUTION; DUE TO AN ERROR WITH NMR GLUE, FOR NOW YOU MUST EXTRACT THE DATA TO A TXT FILE:
+```
+totxt
+```
+The txt file must be called ```SAMPLES.txt``` and should be stored in the processed data folder (inside pdata/1).
+The program will not be working without this for now!!!
+
+## Use the 2d-sel TOCSY Matching a.k.a. SELMA
+
+The GUI design was made to be simple; in general it consists of two steps:
+
+#### Get a green database status
+To get a database; two steps can be taken:
+* Load a database - *You can load a database from a given location; using the browse button*
+```
+To load; just use the browse button to go to the correct location. If the status turns blue; you have a loadable database file present; just cluck the **Load** button.
+```
+* Compile your own database - *You can compile your own database*
+```
+To compile your database; browse to a folder which contains your sacharides. The status should remain red; if a database file is present however; it will be blue.
+It will prompt you to override the current database if one is present.
+```
+**The database will only load experiments who end on a 2 as a number; and will load the 1st processing data.**
+
+#### Get a green experiment status
+This can be done by browsing to your experiments processed folder location. Ensure the **SAMPLES.txt** file is present and you will get a blue status.
+Once your status is blue; you can press the load button.
+
+## The given output
 
 Explain what these tests test and why
 
@@ -117,7 +139,8 @@ See also the list of [contributors](https://github.ugent.be/ydandois/Thesis-Sour
 
 Some code was used from these people or pages their suggestion:
 * [Flutefreak7] (http://stackoverflow.com/users/1639671/flutefreak7) - for his code of R-square
-* 
+* [Marcos Duarte] (https://github.com/demotu/BMC) - for his code of peak detection
+* [Sean Seyler] (https://pythonhosted.org/MDAnalysis/documentation_pages/analysis/psa.html#seyler2015) - for his extended documentation on Fréchet distances
 
 ## Acknowledgments
 

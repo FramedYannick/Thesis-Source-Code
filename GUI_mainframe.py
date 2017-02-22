@@ -4,6 +4,7 @@ GUI designed by Dandois for a mainframe around the python processing module
 """
 
 import tkinter as tk
+from Class import Experiment, Database, Chunk, Values, Curve
 
 def update_GUI(text,label):
 	if str(label) not in ["testing", "ignore"]:
@@ -23,6 +24,7 @@ class app_tk(tk.Tk):
 			self.grid_columnconfigure(i, weight=1, uniform="foo")
 		self.database = []
 		self.experiment = []
+		self.comparison = []
 		self.initialize()
 
 	def initialize(self):
@@ -103,9 +105,8 @@ class app_tk(tk.Tk):
 		button_load_data.grid(column=Settings["GUI_width"], row=14, sticky="EWNS")
 
 
-
-
-
+		button_compare = tk.Button(self, text=u"Run DB Comparison", command=self.experiment_compare, anchor="center")
+		button_compare.grid(column=Settings["GUI_width"] - 1, row=15, sticky="EWNS", columnspan=2)
 
 
 ########################################################################## PLOT CHECKBOX
@@ -165,43 +166,33 @@ class app_tk(tk.Tk):
 		check.grid(column=3, row=13, columnspan=1, sticky="EW")
 
 		self.checkbox_label_text = tk.StringVar()
-		self.checkbox_label_text.set("(Uses alternate method for curve comparison; default is ON.)")
+		self.checkbox_label_text.set("(Uses Frechet method for curve comparison; default is ON.)")
 		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
 		label.grid(column=4, row=13, columnspan=2, sticky="EW")
 
+		self.am_int = tk.BooleanVar()
+		check = tk.Checkbutton(self, text="Alternate CIM", variable=self.am_int, onvalue=True, offvalue=False, command=self.fn_am_int, anchor="w")
+		if Settings["am_int"]: check.toggle()
+		check.grid(column=3, row=14, columnspan=1, sticky="EW")
+
+		self.checkbox_label_text = tk.StringVar()
+		self.checkbox_label_text.set("(Not operational - GUI framework)")
+		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
+		label.grid(column=4, row=14, columnspan=2, sticky="EW")
 
 		self.gp_chunk = tk.BooleanVar()
 		check = tk.Checkbutton(self, text="Custom Chunks", variable=self.gp_chunk, onvalue=True, offvalue=False,command=self.fn_gp_chunks, anchor="w")
 		if Settings["gp_chunks"]: check.toggle()
-		check.grid(column=3, row=14, columnspan=1, sticky="EW")
+		check.grid(column=3, row=15, columnspan=1, sticky="EW")
 
 		self.checkbox_label_text = tk.StringVar()
 		self.checkbox_label_text.set("(Set custom chunks for database comparison - use Exp. Plot!)")
 		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
-		label.grid(column=4, row=14, columnspan=2, sticky="EW")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		label.grid(column=4, row=15, columnspan=2, sticky="EW")
 
 		# custom settings button
 		buttons = tk.Button(self, text=u"Default settings", command=self.OnButtonSettings)
 		buttons.grid(column=5, row=12, sticky="EWNS")
-
-
 
 
 	########################################################################## BUTTON FUNCTIONS
@@ -216,7 +207,7 @@ class app_tk(tk.Tk):
 		if "pdata" not in dir:
 			update_GUI("Please use xf2; apk and abs preprocessed data from topspin...",self.printlabel)
 		else:
-			update_GUI("Ready to read experiment data...",self.printlabel)
+			update_GUI("Ready to read experiment data...\nDon't forget to reload experiment!!!",self.printlabel)
 		self.check_exp_status()
 		self.entry.focus_set()
 		self.entry.selection_adjust(0)
@@ -242,17 +233,23 @@ class app_tk(tk.Tk):
 	def fn_replot(self):
 		from Class import Experiment, Database
 		if type(self.experiment) == Experiment:
-			if Settings["plot_exp"]:
+			if Settings["plot_exp"] and self.status_exp == "green":
 				self.experiment.fn_plot()
-			# if Settings["plot_chunk"]:
-
-			if Settings["plot_values"]:
+			if Settings["plot_chunk"] and len(self.comparison) != 0:
+				print(Settings["gp_chunks_list"])
+				for x in range(len(self.comparison)):
+					#create chunk list for plotting
+					temp_list = []
+					for y in range(3):
+						temp_list.append(self.comparison[x][1][y][1])
+					self.experiment.chunks[x].fn_plot(temp_list)
+			if Settings["plot_values"] and self.status_exp == "green":
 				for x in self.experiment.chunks:
 					x.content.fn_plot()
 		else:
 			update_GUI("Can't do replotting without the experiment loaded.", self.printlabel)
 
-	########################################################################## CHECK FUNCTIONS
+	########################################################################## CHECK FUNCTIONS - switch Settings between True and False as storage
 
 	def fn_plot_exp(self):
 		Settings["plot_exp"] = self.plot_exp_check.get()
@@ -262,6 +259,8 @@ class app_tk(tk.Tk):
 		Settings["plot_values"] = self.plot_values_check.get()
 	def fn_am_ccm(self):
 		Settings["am_norm"] = self.am_ccm.get()
+	def fn_am_int(self):
+		Settings["am_int"] = self.am_int.get()
 	def fn_gp_chunks(self):
 		Settings["gp_chunks"] = self.gp_chunk.get()
 
@@ -269,14 +268,16 @@ class app_tk(tk.Tk):
 
 	def change_exp_status(self, color):
 		self.status_exp_label.configure(bg=color)
+		self.status_exp = color
 
 	def change_data_status(self, color):
 		self.status_data_label.configure(bg=color)
+		self.status_data = color
 
 	def check_exp_status(self):
 		if type(self.experiment) == list:
 			from functions import fn_check_dir
-			if "pdata" in Settings["Experiment_Directory"] and fn_check_dir(Settings["Experiment_Directory"], "acqu2s"):
+			if "pdata" in Settings["Experiment_Directory"] and fn_check_dir(Settings["Experiment_Directory"], "auditp.txt"):
 				self.change_exp_status("blue")
 			else:
 				self.change_exp_status("red")
@@ -298,14 +299,12 @@ class app_tk(tk.Tk):
 				self.change_data_status("orange")
 
 
-	########################################################################## EXPERIMENT FUNCTIONS
+	########################################################################## EXPERIMENT & DATABASE FUNCTIONS
 
 	def experiment_load(self):
 		from Class import Experiment
 		self.experiment = Experiment(Settings["Experiment_Directory"], self.printlabel,Settings)
 		self.check_exp_status()
-
-	########################################################################## DATABASE FUNCTIONS
 
 	def database_load(self):
 		from Class import Database
@@ -318,6 +317,23 @@ class app_tk(tk.Tk):
 		self.database.fn_compile()
 		self.check_data_status()
 
+	def experiment_compare(self):
+		from Class import Experiment
+		if self.status_exp == self.status_data == "green" and type(self.experiment) == Experiment:
+			if Settings["gp_chunks"]:
+				from tkinter import simpledialog
+				Settings["gp_chunks_list"] = simpledialog.askstring("Custom chunks","Required Chunks?", initialvalue=str(Settings["gp_chunks_list"]).replace("[", "").replace("]", ""), parent=self)
+				if Settings["gp_chunks_list"] == None:
+					Settings["gp_chunks_list"] = []
+			else:
+				Settings["gp_chunks_list"] = []
+			self.database.fn_override_settings(Settings)
+			self.comparison = self.experiment.fn_compare(self.database)
+			from functions import fn_result_printer
+			text = fn_result_printer(self.comparison, Settings["gp_print"])
+			update_GUI(text, self.printlabel)
+		else:
+			update_GUI("Cannot run database comparison without Green status.\nPlease ensure both experiment and Database are loaded.", self.printlabel)
 
 
 

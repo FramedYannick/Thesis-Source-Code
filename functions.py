@@ -86,18 +86,6 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 	return integral_limits, peaks_ind
 
 
-#calculate the correlation coeff - will calculate linearity if only one list is given
-def fn_correlation (list, list2 = []):
-	from numpy import corrcoef
-	if len(list2) == 0:
-		for x in range(len(list)):
-			list2.append(x)
-	#correlation = corrcoef(list, list2)[0][1]
-	from scipy.stats import pearsonr
-	correlation = pearsonr(list,list2)[1]
-	return correlation
-
-
 #calculate the rico between the first and last point
 def fn_rico (list, vclist):
 	return (list[len(list)-1] - list[0])/(len(vclist))
@@ -118,6 +106,27 @@ def fn_noise_filter(chunk_peak_ind, chunk_max):
 		if chunk_max[x] > limit:
 			temp.append(x)
 	return temp, limit
+
+#alternate integral way
+def fn_alt_integrals(max_curve):
+	import numpy as np
+	limit = np.mean(max_curve)
+	temp_01, new_limit, x = [], [0,0], 0
+	integral_limits, peaks_ind = [],[]
+	while x < len(max_curve):
+		while len(max_curve) < x and max_curve[x] < limit:
+			x +=1
+		new_limit[0] = x
+		while len(max_curve) < x and max_curve[x] >= limit:
+			x +=1
+		new_limit[1] = x
+		if len(max_curve) < x:
+			integral_limits.append(new_limit)
+			peaks_ind.append(np.mean(new_limit))
+	return integral_limits, peaks_ind, limit
+
+
+
 
 #function for reading the title file
 def fn_read_title(dir):
@@ -232,34 +241,23 @@ def fn_calc_plots (list):
 	else:
 		return dict[str(number)]
 
-def fn_compare_curves(list1, list2): #NOT OPTIMAL AT ALL - ASK DAWYNDT
-	from copy import deepcopy
-	from numpy import trapz
-	list1_c = deepcopy(list1)
-	list2_c = deepcopy(list2)
-	CCF = 1.
-	#sort list1 on importance
-	list1_c.sort(key=lambda x: x.size,reverse=True)
-	# find best comparable curve and save the data
-	for x in range(min(len(list1_c), len(list2_c))):
-		curve1 = list1_c[x]
-		best = 0
-		best_curve = 0.
-		for curve2 in list2_c:
-			temp = curve1.fn_compare(curve2)
-			if temp > best:
-				best = temp
-				best_curve = curve2
-		if best_curve != 0.:
-			list2_c.remove(best_curve)
-			CCF *= best
-	list1_c = list1_c[min(len(list1), len(list2))+1:]
-	# punish for the remaining curves
-	tot = 1
-	for x in list1_c + list2_c:
-		tot += trapz(x.data)
-	return CCF/tot
+def euc_dist(pt1,pt2):
+	import math
+	return math.sqrt((pt2[0]-pt1[0])*(pt2[0]-pt1[0])+(pt2[1]-pt1[1])*(pt2[1]-pt1[1]))
 
+def fn_frechet(list1, list2, mtlist):
+	res = 0.
+	for x in range(len(list1)):
+		val = 100.
+		for y in range(x,len(list2)):
+			dist = euc_dist([list1[x],mtlist[x]], [list2[y], mtlist[y]])
+			if dist < val:
+				val = dist
+		if val > res:
+			res = val
+	if res == 0.:
+		res = 0.000000000001
+	return res*4#/max(list1+list2)
 
 #file checker
 def fn_check_dir(dir,file):
@@ -289,6 +287,14 @@ def fn_progress_gen(num):
 	string = format("Compiling database - %s%s" % (str(num * 100), r"%"))
 	return string
 
+def fn_result_printer(result, gp_print):
+	text = "Results:\n-----------------------------------"
+	for x in result: #for each chunk
+		for y in range(min(gp_print, len(x[1]))): #for each result in chunk
+			text = text + "\n" + str(x[0]) + ": " + str(x[1][y][0]) + format("  %s" %x[1][y][1].sample_name)
+		text += "\n-----------------------------------"
+	return text
+
 # get the settings from the config
 def fn_settings():
 	Settings = {}
@@ -301,8 +307,10 @@ def fn_settings():
 	Settings["plot_values"] = config.plot_values
 
 	Settings["am_norm"] = config.am_norm
+	Settings["am_int"] = config.am_int
 
 	Settings["gp_chunks"] = config.gp_chunks
+	Settings["gp_chunks_list"] = []
 	Settings["gp_print"] = config.gp_print
 
 	#GUI settings - not in config
@@ -310,3 +318,4 @@ def fn_settings():
 	Settings["Foreground"] = "white"
 	Settings["GUI_width"] = 9	#9 is the minimum!!!
 	return Settings
+
