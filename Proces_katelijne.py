@@ -45,6 +45,8 @@ def katelijne(printlabel, Settings):
 
 
 		katelijne_lijst.append(temp)
+	import pickle
+	pickle.dump(katelijne_lijst, open(Settings["Database_Directory"] + r"\kat.p", "wb"))
 	return katelijne_lijst
 
 

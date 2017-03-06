@@ -60,7 +60,7 @@ class Experiment(object):
 		# collect the lists
 		self.vclist = fn_vclist(dir)
 		self.fqlist, self.fqlist_ppm = fn_fqlist(dir, self.B0_hz)
-		self.mtlist = np.array(self.vclist)*115.122 * 25 * 10 ** (-6)
+		self.mtlist = np.array(self.vclist)*115.112 * 25 * 10 ** (-6)
 
 		# colect the title
 		self.sample_name, self.extra_info, self.order = fn_read_title(dir)
@@ -215,9 +215,10 @@ class Chunk(object):
 				if y == 0:
 					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x], label=chunk_list[x].sample_name)
 				else:
-					plt.plot(self.mtlist(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x])
+					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x])
+		plt.xlim(0.007,0.113)
 		if text != "":
-			plt.text(10,0.8,text, fontsize=15)
+			plt.text(0.1,0.8,text, fontsize=15)
 		ax.set_ylabel("Intensity (rel.)")
 		ax.set_xlabel("Mixing Time (s)")
 		plt.legend()
@@ -402,7 +403,6 @@ class Database(object):
 
 		from GUI_mainframe import update_GUI
 		from functions import fn_check_folders
-		import pickle
 
 		# check if database exist and prompt user
 		from functions import fn_check_dir, fn_progress_gen
@@ -435,8 +435,12 @@ class Database(object):
 			exp = Experiment(dir_list[y]+"\\pdata\\1", "ignore")
 			for chunk in exp.chunks:
 				self.content.append(chunk)
+		self.status = self.fn_save()
 
+	def fn_save(self):
 		#save the files
+		from GUI_mainframe import update_GUI
+		import pickle
 		update_GUI("Completed database - 100%", self.printlabel)
 		pickle.dump(self.content, open(self.dir + r"\Database.p", "wb"))
 
@@ -446,6 +450,7 @@ class Database(object):
 			for x in self.content:
 				file.write(str(x) + "\n")
 		self.status = True
+		return self.status
 
 	def fn_plot(self, list1):
 		temp_list = []
@@ -510,45 +515,24 @@ if __name__ == "__main__":
 	#data.fn_plot(["a-Galactopyr.", "b-Arabinopyr."])
 
 
-	test = Experiment(r"D:\DATA\master2016\Samples\32\pdata\1", "testing")
+	test = Experiment(r"D:\DATA\master2016\SAMPLES\32\pdata\1", "testing")
 	#comp = test.chunks[0].fn_compare(data)
 	#comp = test.chunks[5].fn_compare(data)
 
 
 	if False:	#perform cluster analysis
-		data.fn_compile()
-		title = []
-		matrix = []
-		for z in range(len(data.content)):
-			x = data.content[z]
-			comp = x.fn_compare(data, False)
-			temp = []
-			for q in range(len(comp)):
-				y = comp[q]
-				temp.append(1-y[0])
-				if (0.99>y[0]>0.5) and z < q and True:
-					print(y[0])
-					x.fn_plot(y[1], r"$\delta$: " + str(round(y[0],2))) #, format("C:/Users/yannick/Documents/_Documenten/UGent/Thesis/PicDump/Frechet/%s.png" %(x.sample_name.replace(".","") +" - " + y[1].sample_name.replace(".",""))))
-				if z != q and y[0] == 1.0:
-					raise ValueError('PAAADUUUUUMMMmmmmm TSSSSsssss... This is a boeboe.')
-			matrix.append(temp)
-			title.append(x.sample_name)
-		print(title)
-		for x in matrix:
-			print(x)
-		import numpy as np
-		print(np.mean(matrix))
+		from functions import fn_cluster_analysis
+		fn_cluster_analysis(data)
 
+	#compare a number of different monosaccharides
 	if False:
+		plotter = []
 		for x in data.content:
-			if x.sample_name == "b-Rhamnopyr.":
-				for y in data.content:
-					if y.sample_name == "b-Mannopyr.":
-						print(len(x.content.content), len(y.content.content))
-						print(x.content.fn_compare(y.content))
-						print("----------------")
-						print(y.content.fn_compare(x.content))
+			if x.sample_name in ["a-L_Rhamnopyr.","b-Ribofur.","b-Ribofur."]:
+				plotter.append(x)
+		plotter[0].fn_plot(plotter[1:])
 
+	#function to compare katelijne data - still need DTW
 	if False:
 		from Proces_katelijne import katelijne
 		from functions import fn_settings
@@ -558,6 +542,21 @@ if __name__ == "__main__":
 				for y in data.content:
 					if y.sample_name == "a-Rhamnopyr.":
 						print(type(x), type(y))
-						print(x.content.fn_compare(y.content))
-						print("----------------")
-						print(y.content.fn_compare(x.content))
+						print(x.fn_plot(y))
+
+	#plot everything from a specific monosaccharide
+	if True:
+		for x in data.content:
+			if x.sample_name == "a-Glucopyr.":
+				a = x
+				import matplotlib.pyplot as plt
+				fig = plt.figure()
+				ax = plt.subplot()
+
+				plt.plot(x.max_curve)
+				ax.set_ylabel("Intensity (rel.)")
+				ax.set_xlabel("Data point")
+				plt.show()
+
+				x.fn_plot()
+				x.content.fn_plot()

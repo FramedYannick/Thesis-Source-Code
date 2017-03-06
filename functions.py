@@ -83,6 +83,25 @@ def fn_integrals(chunk_max, peaks_ind, chunk_noise):
 		peaks_ind.pop(x)
 		integral_limits.pop(x)
 	"""
+
+	#temp plotting function
+	if (False):
+		import matplotlib.pyplot as plt
+		temp_int = []
+		for x in range(len(chunk_max)):
+			temp_int.append(0)
+		for x in integral_limits:
+			for y in range(x[0], x[1]):
+				temp_int[y] = 0.2
+		fig = plt.figure()
+		ax = plt.subplot()
+		ax.set_ylabel("Intensity (rel.)")
+		ax.set_xlabel("Data #")
+		plt.plot(chunk_max, label="Max. Curve")
+		plt.plot(temp_int, label= "Integral Filter")
+		plt.legend()
+		plt.show()
+
 	return integral_limits, peaks_ind
 
 
@@ -181,7 +200,7 @@ def fn_parameters(dic, dic2, dic3):
 	B0_hz = float(dic2[dic2.find(r'$SFO1=') + 7:dic2.find('##$SFO2')])
 	# SO1_hz = float(dic2[dic2.find(r'$O1=') + 5:dic2.find('##$O2')])
 	SW_hz = float(dic['procs']['SW_p'])
-	SW_ppm = SW_hz / B0_hz
+	SW_ppm = SW_hz / B0_hz / 2
 	duplet_ppm = 15 / B0_hz  # from Karplus
 	chunk_num = int(int(dic3[dic3.find(r'$TD=')+5:][:dic3[dic3.find(r'$TD=')+5:].find("\n")])/13)
 	return B0_hz, SW_ppm, SW_hz, duplet_ppm, chunk_num
@@ -291,9 +310,61 @@ def fn_result_printer(result, gp_print):
 	text = "Results:\n-----------------------------------"
 	for x in result: #for each chunk
 		for y in range(min(gp_print, len(x[1]))): #for each result in chunk
-			text = text + "\n" + str(x[0]) + ": " + str(x[1][y][0]) + format("  %s" %x[1][y][1].sample_name)
+			text = text + "\n" + str(x[0]) + ": " + str(round(x[1][y][0],3)) + format("  %s" %x[1][y][1].sample_name)
 		text += "\n-----------------------------------"
 	return text
+
+#convert the dendrogram to the newick format for iTOL
+def getNewick(node, newick, parentdist, leaf_names):
+	if node.is_leaf():
+		return "%s:%.2f%s" % (leaf_names[node.id], parentdist - node.dist, newick)
+	else:
+		if len(newick) > 0:
+			newick = "):%.2f%s" % (parentdist - node.dist, newick)
+		else:
+			newick = ");"
+		newick = getNewick(node.get_left(), newick, node.dist, leaf_names)
+		newick = getNewick(node.get_right(), ",%s" % (newick), node.dist, leaf_names)
+		newick = "(%s" % (newick)
+		return newick
+
+#perform cluster analysis on a given database
+def fn_cluster_analysis(data):
+	data.fn_compile()
+	title = []
+	matrix = []
+	for z in range(len(data.content)):
+		x = data.content[z]
+		comp = x.fn_compare(data, False)
+		temp = []
+		for q in range(len(comp)):
+			y = comp[q]
+			temp.append(y[0])
+			if (0.99 > y[0] > 0.5) and z < q and True:
+				print(y[0])
+				x.fn_plot(y[1], r"$\delta$: " + str(round(y[0],2)), format("C:/Users/yannick/Documents/_Documenten/UGent/Thesis/Statistics/Cluster analysis/Frechet/%s.png" %(x.sample_name.replace(".","") +" - " + y[1].sample_name.replace(".",""))))
+			if z != q and y[0] == 1.0:
+				raise ValueError('PAAADUUUUUMMMmmmmm TSSSSsssss... This is a boeboe.')
+		matrix.append(temp)
+		title.append(x.sample_name)
+	print(title)
+	for x in range(len(matrix)):
+		for y in range(len(matrix[0])):
+			matrix[x][y] = (matrix[x][y] + matrix[y][x]) / 2
+			matrix[y][x] = matrix[x][y]
+	#print the entire matrix
+	for x in matrix:
+		print(x)
+	import numpy as np, matplotlib.pyplot as plt, scipy.cluster.hierarchy as hca
+	print(np.mean(matrix))
+
+	a = hca.linkage(matrix, "average")
+	plt.figure()
+	b = hca.dendrogram(a, leaf_font_size=15., labels=title, orientation='left')
+	plt.show()
+	tree = hca.to_tree(a, False)
+	res = getNewick(tree, "", tree.dist, title)
+	print(res)
 
 # get the settings from the config
 def fn_settings():

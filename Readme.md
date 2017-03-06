@@ -17,18 +17,13 @@ This processing script uses Python 3.5 and was made using Anaconda. The main req
 NMRGlue			-	http://www.nmrglue.com/
 Numpy			-	http://www.numpy.org/
 Scipy			-	https://www.scipy.org/
-Detect Peaks	-	https://github.com/demotu/BMC - Marcos Duarte
-
 ```
+If you are using the packaged version; no python modules are needed at all.
 
-### Installing (only required once)
+### Installing
 
-A step by step series of examples that tell you have to get a development environment running.
+You have two options; you can download the prepackaged file from the github (just under 200MB) or you can download the raw code (not recommended).
 It should come packaged in a **.exe** file.
-
-```
-The program has not been packaged yet. This will be done soon...
-```
 
 ## Usage and setup for analysis
 
@@ -119,13 +114,31 @@ It will prompt you to override the current database if one is present.
 This can be done by browsing to your experiments processed folder location. Ensure the **SAMPLES.txt** file is present and you will get a blue status.
 Once your status is blue; you can press the load button.
 
+### Running the Database comparison
+If both your experiment and database status labels are green; you can run the database search.
+If you only want the search to be executed on specific chunks; please set it under the quick settings. A message box will appear to ask which chunks it should integrate.
+The numbers should be seperated by commas; and may not be higher then the highest chunk. An example is given below:
+```
+1,2,5
+```
+If you want specific plots while the database search is executed; make sure to set them on the bottom left corner.
+Please remember that the GUI might be *Non responding* during the search; this is completely normal.
+
 ## The given output
 
-Explain what these tests test and why
+For a sucrose sample; using the Fréchet-method; the given output will be:
 
 ```
-Give an example
+            Results:
+-----------------------------------
+    0: 0.615 a-Glucopyr.
+    0: 0.223 a-Xylopyr.
+    0: 0.215 b-Arabinopyr.
+-----------------------------------
 ```
+
+The closer the value is to 1.0; the better the match. 1.0 means an identical match of the sacharide. Please keep in mind that this is a calculated value; and errors might occur during integration.
+Always use the Chunk plot to double check the curves; to ensure the correctness of your results.
 
 ## Authors
 
@@ -135,12 +148,12 @@ Give an example
 
 See also the list of [contributors](https://github.ugent.be/ydandois/Thesis-Source-Code/graphs/contributors) who participated in this project.
 
-## Give credit where it is due.
+## Give credit where it is due!
 
 Some code was used from these people or pages their suggestion:
 * [Flutefreak7] (http://stackoverflow.com/users/1639671/flutefreak7) - for his code of R-square
 * [Marcos Duarte] (https://github.com/demotu/BMC) - for his code of peak detection
-* [Sean Seyler] (https://pythonhosted.org/MDAnalysis/documentation_pages/analysis/psa.html#seyler2015) - for his extended documentation on Fréchet distances
+* [Sean Seyler] (https://pythonhosted.org/MDAnalysis/documentation_pages/analysis/psa.html#seyler2015) - for his extended documentation on Fréchet distance
 
 ## Acknowledgments
 
