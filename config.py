@@ -16,7 +16,7 @@ plot_values = False					# will plot each chunk on different plot with ppm's give
 plot_integration = True				# should only be used for debugging purpoces
 
 	#Alternate methods
-am_norm = True
+am_norm = False
 am_int = False
 
 

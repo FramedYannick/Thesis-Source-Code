@@ -7,8 +7,6 @@ class Experiment(object):
 	"""
 
 	def __init__(self, dir, printlabel, Settings="empty"):
-		import nmrglue as ng
-		import numpy as np
 		from functions import fn_check_dir
 		from GUI_mainframe import update_GUI
 		update_GUI("Reading in experiment.",printlabel)
@@ -20,8 +18,21 @@ class Experiment(object):
 		self.Settings = Settings
 		self.printlabel = printlabel
 
-		self.dic, self.data = ng.bruker.read_pdata(dir)
+		if fn_check_dir(dir[:dir.find('pdata')], "pulseprogram"):
+			if "seldigpzs2d" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
+				self.init_seldigpzs2d(self.dir, self.printlabel)
+			elif "new pulse program" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
+				self.init_newpp(self.dir, self.printlabel)
+		else:
+			update_GUI("error; no pulseprogram found", printlabel)
 
+	def init_seldigpzs2d(self, dir, printlabel):
+		import nmrglue as ng
+		import numpy as np
+		from functions import fn_check_dir
+		from GUI_mainframe import update_GUI
+
+		self.dic, self.data = ng.bruker.read_pdata(dir)
 
 		# read in the alternate data if possible - compenation for the NMRGlue chunk error
 		# can be deleted once we fixed nmrglue!!!
@@ -104,6 +115,9 @@ class Experiment(object):
 
 		if self.Settings["plot_exp"]:
 			self.fn_plot()
+
+	def init_newpp(selfdir, dir, printlabel):
+		print("woepsie")
 
 	def fn_plot(self):
 		import matplotlib.pyplot as plt
@@ -360,8 +374,9 @@ class Curve(object): #use to collect all the information on each peak
 			corr = 0.0
 		if corr > 1.0:
 			corr = 1.0
+		#switch from how different to how similar
 		corr = 1.0 - corr
-		#returns correlation% - 1 is perfect!
+		#returns correlation % - 1 is perfect!
 		return corr
 
 
@@ -469,31 +484,9 @@ class Database(object):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ########################################################################################################################
 ########################################################################################################################
+#code for testing purpoces and to create graphs - not used by the distribution
 
 if __name__ == "__main__":
 	"""
@@ -510,12 +503,12 @@ if __name__ == "__main__":
 	from config import Database_Directory
 	from functions import fn_settings
 	data = Database(Database_Directory, "testing", fn_settings())
-	#data.fn_plot(["a-Mannopyr.", "a-Rhamnopyr."])
-	#data.fn_plot(["b-Mannopyr.", "b-Rhamnopyr."])
+	#data.fn_plot(["a-L_Rhamnopyr.","b-Ribofur.","b-Ribofur."])
 	#data.fn_plot(["a-Galactopyr.", "b-Arabinopyr."])
 
 
 	test = Experiment(r"D:\DATA\master2016\SAMPLES\32\pdata\1", "testing")
+	print(test.chunks[0].max_curve)
 	#comp = test.chunks[0].fn_compare(data)
 	#comp = test.chunks[5].fn_compare(data)
 
@@ -523,14 +516,6 @@ if __name__ == "__main__":
 	if False:	#perform cluster analysis
 		from functions import fn_cluster_analysis
 		fn_cluster_analysis(data)
-
-	#compare a number of different monosaccharides
-	if False:
-		plotter = []
-		for x in data.content:
-			if x.sample_name in ["a-L_Rhamnopyr.","b-Ribofur.","b-Ribofur."]:
-				plotter.append(x)
-		plotter[0].fn_plot(plotter[1:])
 
 	#function to compare katelijne data - still need DTW
 	if False:
@@ -544,8 +529,8 @@ if __name__ == "__main__":
 						print(type(x), type(y))
 						print(x.fn_plot(y))
 
-	#plot everything from a specific monosaccharide
-	if True:
+	#plot the max curve from a specific monosaccharide
+	if False:
 		for x in data.content:
 			if x.sample_name == "a-Glucopyr.":
 				a = x

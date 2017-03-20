@@ -348,6 +348,7 @@ def fn_cluster_analysis(data):
 		matrix.append(temp)
 		title.append(x.sample_name)
 	print(title)
+	#symitrize the matrix
 	for x in range(len(matrix)):
 		for y in range(len(matrix[0])):
 			matrix[x][y] = (matrix[x][y] + matrix[y][x]) / 2
