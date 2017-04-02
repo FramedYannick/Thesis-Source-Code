@@ -70,7 +70,7 @@ xf2 xdim; apk2d; abs2
 
 However; due to the harder phasing upon using the experiment on multiple frequencies; it might be beneficial to do the phasing manually.
 
-## HOw to use the p3D Band Selective TOCSY
+## How to use the p3D Band Selective TOCSY
 
 The 3D-Bsel TOCSY should only be used upon high sample complexity as it has a much higher measuring time. It will yield identical results as the p2D experiment.
 
@@ -90,7 +90,7 @@ F2QF(calclist(vc,1))
 ```
 Creating the indirect dimension (increment the delay) and the mixing dimension.
 
-## Setup an experiment
+### Setup an experiment
 
 Every step of the p2D experiment for the power levels and pulse durations is the same.
 The dimensions of the experiment however; are different: TD = (2k/4k, 13, 64/128).
