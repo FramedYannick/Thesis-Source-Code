@@ -14,21 +14,23 @@ For the analysis a 700MHz NMR-spectrometer was used. However the software will a
 This processing script uses Python 3.5 and was made using Anaconda. The main required modules are:
 
 ```
-NMRGlue			-	http://www.nmrglue.com/
-Numpy			-	http://www.numpy.org/
+NMRGlue			-	https://www.nmrglue.com/
+Numpy			-	https://www.numpy.org/
 Scipy			-	https://www.scipy.org/
 ```
+NMRGlue has many dependencies; upon installing this all required modules are present. It is adviced to check their tutorial.
 If you are using the packaged version; no python modules are needed at all.
 
 ### Installing
 
-There are two different pulse programs available; one as an array of 1D-sel TOCSY's using the DIPSI spin lock sequence; called the sel-2D TOCSY. This is used for non complex mixtures where the anomeric peaks are well seperated. The measurement time is dependant on the amount of monosaccharides; and the setting up is more extended.
+There are two different pulse programs available; one as an array of 1D-sel TOCSY's using the DIPSI spin lock sequence; called the p2D-sel TOCSY. This is used for non complex mixtures where the anomeric peaks are well seperated. The measurement time is dependant on the amount of monosaccharides; and the setting up is more extended.
 However, in general this is the fastest measurement method in case of limited measurement time.
 The second pulse program; a band selective 3D-TOCSY, has longer measurement time; but is much better to seperate the anomeric signals.
-Both pulse programs can be found [here](https://github.ugent.be/ydandois/Thesis-Source-Code/tree/master/PulsePrograms).
+Both pulse programs with more explenation can be found [here](https://github.ugent.be/ydandois/Thesis-Source-Code/tree/master/PulsePrograms).
 
 For the processing software, you also have two options; you can download the prepackaged file from the github (just under 200MB) or you can download the raw code (not recommended).
-It should come packaged in a **.exe** file.
+Upon downloading the raw code; please make sure you have all dependencies present on your computer.
+The **.exe** file is the easiest way for end users to use.
 
 ## Use the 2d-sel TOCSY Matching a.k.a. SELMA
 
@@ -76,6 +78,7 @@ For a sucrose sample; using the Fréchet-method; the given output will be:
 
 The closer the value is to 1.0; the better the match. 1.0 means an identical match of the sacharide. Please keep in mind that this is a calculated value; and errors might occur during integration.
 Always use the Chunk plot to double check the curves; to ensure the correctness of your results.
+Always check the clustering to see if other monosaccharides could be a sollution as well!
 
 ## Authors
 
@@ -88,6 +91,7 @@ See also the list of [contributors](https://github.ugent.be/ydandois/Thesis-Sour
 ## Give credit where it is due!
 
 Some code was used from these people or pages their suggestion:
+* [dr. Davy Sinnaeve] (https://archive.ugent.be/person/801002020586) - for his help with the pulse program
 * [Flutefreak7] (http://stackoverflow.com/users/1639671/flutefreak7) - for his code of R-square
 * [Marcos Duarte] (https://github.com/demotu/BMC) - for his code of peak detection
 * [Sean Seyler] (https://pythonhosted.org/MDAnalysis/documentation_pages/analysis/psa.html#seyler2015) - for his extended documentation on Fréchet distance
@@ -96,4 +100,4 @@ Some code was used from these people or pages their suggestion:
 
 * Thank you to prof. J. C. Martins and prof. P. Dawyndt for giving me the opportunity to work on this project.
 * A big thanks to Niels Geudens for the countless questions a was allowed to ask.
-* and of course all the people from the NMRSTR group.
+* Of course all the people from the NMRSTR group.

@@ -20,11 +20,13 @@ class Experiment(object):
 
 		if fn_check_dir(dir[:dir.find('pdata')], "pulseprogram"):
 			if "seldigpzs2d" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
+				self.pp = "seldigpzs2d"
 				self.init_seldigpzs2d(self.dir, self.printlabel)
-			elif "new pulse program" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
-				self.init_newpp(self.dir, self.printlabel)
+			elif "dipsigpphzsbs" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
+				self.pp = "dipsigpphzsbs"
+				self.init_dipsigpphzsbs(self.dir, self.printlabel)
 		else:
-			update_GUI("error; no pulseprogram found", printlabel)
+			update_GUI("error; no correct pulseprogram found", printlabel)
 
 	def init_seldigpzs2d(self, dir, printlabel):
 		import nmrglue as ng
@@ -36,22 +38,24 @@ class Experiment(object):
 
 		# read in the alternate data if possible - compenation for the NMRGlue chunk error
 		# can be deleted once we fixed nmrglue!!!
-		self.data_file = ""
-		if fn_check_dir(dir, "DATABASE.txt"):
-			self.data_file = open(dir + r"\DATABASE.txt", 'r').readlines()
-		elif fn_check_dir(dir, "SAMPLES.txt"):
-			self.data_file = open(dir + r"\SAMPLES.txt", 'r').readlines()
-		if self.data_file != "":
-			self.data = []
-			for line in self.data_file:
-				if ("row" in line):
-					self.data.append([])
-				else:
-					if "#" not in line:
-						self.data[len(self.data) - 1].append(float(line.replace(r"\n", "")))
-		else:
-			update_GUI("No extra data file was found...", printlabel)
-			quit()
+
+		if self.dic["procs"]["XDIM"] != self.dic["procs"]["FTSIZE"]:
+			self.data_file = ""
+			if fn_check_dir(dir, "DATABASE.txt"):
+				self.data_file = open(dir + r"\DATABASE.txt", 'r').readlines()
+			elif fn_check_dir(dir, "SAMPLES.txt"):
+				self.data_file = open(dir + r"\SAMPLES.txt", 'r').readlines()
+			if self.data_file != "":
+				self.data = []
+				for line in self.data_file:
+					if ("row" in line):
+						self.data.append([])
+					else:
+						if "#" not in line:
+							self.data[len(self.data) - 1].append(float(line.replace(r"\n", "")))
+			else:
+				update_GUI("No extra data file was found...", printlabel)
+				quit()
 
 		# reform the data for oversaving effect
 		from copy import deepcopy
@@ -66,7 +70,9 @@ class Experiment(object):
 		self.dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
 		self.dic3 = open(dir[:dir.find('pdata')] + r'\acqu2s', 'r').read()
 
-		self.B0_hz, self.SW_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num = fn_parameters(self.dic, self.dic2, self.dic3)
+		self.B0_hz, self.SW_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num = fn_parameters(self.dic, self.dic2, self.dic3, self.pp)
+		self.SW_ppm = 0.5*self.SW_ppm
+		self.SO1_ppm = 0.5*self.SW_ppm
 
 		# collect the lists
 		self.vclist = fn_vclist(dir)
@@ -109,15 +115,93 @@ class Experiment(object):
 				title = "%i-%s" % (x, self.sample_name)
 
 			#initialise chunk and perform the functions that are needed
-			chunk_temp = Chunk(new_chunk, title, self.fqlist[x], self.SW_ppm, self.duplet_ppm, self.mtlist, self.printlabel, self.Settings)
+			chunk_temp = Chunk(new_chunk, title, self.fqlist[x], self.SW_ppm, self.duplet_ppm, self.mtlist, self.SO1_ppm, self.pp, self.printlabel, self.Settings)
 			self.chunks.append(chunk_temp)
 		#return self # list of all chunk objects
 
 		if self.Settings["plot_exp"]:
 			self.fn_plot()
 
-	def init_newpp(selfdir, dir, printlabel):
-		print("woepsie")
+	def init_dipsigpphzsbs(self, dir, printlabel):
+		import nmrglue as ng
+		import numpy as np
+		from functions import fn_check_dir, fn_p3d_reform, fn_p3d_diagonal, fn_noise_filter
+		from GUI_mainframe import update_GUI
+
+		self.dic, self.data = ng.bruker.read_pdata(dir)
+
+		#oversave effect and reorder the data
+		self.data = fn_p3d_reform(self.data)
+
+		# collect the parameters
+		from functions import fn_vclist, fn_parameters, fn_read_title
+		self.dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
+		self.dic3 = open(dir[:dir.find('pdata')] + r'\acqu2s', 'r').read()
+		self.B0_hz, self.SW_ppm, self.SW2_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num = fn_parameters(self.dic, self.dic2, self.dic3, self.pp)
+		# extra parameter
+		self.SO1_ppm = float(self.dic2[self.dic2.find(r'$O1=') + 5:][:self.dic2[self.dic2.find(r'$O1=')+5:].find("\n")])/self.B0_hz
+
+		# collect the lists
+		self.vclist = fn_vclist(dir)
+		self.mtlist = np.array(self.vclist)*115.112 * 25 * 10 ** (-6)
+
+		# colect the title
+		self.sample_name, self.extra_info, self.order = fn_read_title(dir)
+
+		# find the diagonal
+		self.diag = fn_p3d_diagonal(self.data[0], self.SW_ppm, self.SW2_ppm, self.SO1_ppm)
+		from detect_peaks import detect_peaks
+		self.ind_diag = detect_peaks(self.diag, show=self.Settings["plot_diagonal"], mph=self.Settings["gp_threshold"])
+		self.ind_diag, limit = fn_noise_filter(self.ind_diag, self.diag, 5)
+
+		# find duplets on the diagonal; must be averaged index & recombine
+		duplet_ind = int(self.duplet_ppm/self.SW2_ppm*len(self.data[0]))
+		duplet_ind_new, remove = [], []
+		self.ind_diag.append(9)
+		for z in range(len(self.ind_diag)-1):
+			x = self.ind_diag[z]
+			y = self.ind_diag[z+1]
+			if (abs(self.diag[x]-self.diag[y])/np.max([self.diag[x], self.diag[y]]) < 0.3) and ((y-x) < duplet_ind):
+				duplet_ind_new.append(int((x+y)/2))
+				remove.append(z+1)
+			else:
+				duplet_ind_new.append(x)
+
+		# remove the H2O peak
+		len2 = len(self.data[0])
+		h2p_ind = int((self.SO1_ppm - (2353/self.B0_hz) - 0.5 * self.SW2_ppm) / self.SW2_ppm * len2 + len2)
+		for z in range(len(duplet_ind_new)):
+			x = duplet_ind_new[z]
+			if (abs(h2p_ind - x) < 10/1024*len2):
+				remove.append(z)
+		unique = []
+		[unique.append(item) for item in remove if item not in unique]
+		remove = sorted(unique, reverse=True)
+		for x in remove:
+			duplet_ind_new.pop(x)
+		self.ind_diag = duplet_ind_new
+		self.chunk_num = len(self.ind_diag)
+
+		# get the new data 2d planes and initialise the chunks
+		self.chunks = []
+		update_GUI("Calculating peaks and integrals for each chunk.", self.printlabel)
+		for x in range(self.chunk_num):
+			index = self.ind_diag[x]
+			chunk =  []
+			for y in self.data:
+				chunk.append(y[index])
+			max = np.max(chunk)
+			new_chunk, new_data = [], []
+			for row in chunk:
+				new_chunk.append(row / max)
+
+			# create the title for the chunk
+			temp_ppm = (len2 - self.ind_diag[x]) / len2 * self.SW2_ppm + self.SO1_ppm - 0.5 * self.SW2_ppm
+			title = "%.2fppm - %s" % ((temp_ppm), self.sample_name)
+
+			# initialise chunk and perform the functions that are needed
+			chunk_temp = Chunk(new_chunk, title, temp_ppm, self.SW_ppm, self.duplet_ppm, self.mtlist, self.SO1_ppm, self.pp, self.printlabel, self.Settings)
+			self.chunks.append(chunk_temp)
 
 	def fn_plot(self):
 		import matplotlib.pyplot as plt
@@ -166,13 +250,15 @@ class Experiment(object):
 
 #chunk class
 class Chunk(object):
-	def __init__(self, chunk_data, title, chunk_fq, SW_ppm, duplet_ppm, mtlist, printlabel, Settings):
+	def __init__(self, chunk_data, title, chunk_fq, SW_ppm, duplet_ppm, mtlist, SO1_ppm, pp, printlabel, Settings):
 		self.data = chunk_data
 		self.sample_name = title
 		self.chunk_fq = chunk_fq
 		self.SW_ppm = SW_ppm
-		self.duplet_ppm = duplet_ppm	# redundant for now
+		self.duplet_ppm = duplet_ppm
 		self.mtlist = mtlist
+		self.SO1_ppm = SO1_ppm
+		self.pp = pp
 		self.printlabel = printlabel
 		self.Settings = Settings
 
@@ -193,6 +279,7 @@ class Chunk(object):
 			# use a min hight filter
 			from functions import fn_alt_integrals
 			self.integrals, self.indices, self.noise = fn_alt_integrals(self.max_curve)
+			print("woepsie; turn off alternate method: integrals please")
 
 
 
@@ -207,9 +294,9 @@ class Chunk(object):
 			self.integrals, self.indices = fn_integrals(self.max_curve, self.indices, self.noise)
 
 		#calculate the integral values
-		temp_values, self.integrals, self.indices, self.indices_ppm = fn_integrate_new(self.data, self.integrals, self.indices, self.SW_ppm)
+		temp_values, self.integrals, self.indices, self.indices_ppm = fn_integrate_new(self.data, self.integrals, self.indices, self.SW_ppm, self.SO1_ppm, self.pp)
 		#set the content using the Values class
-		self.content = Values(temp_values, self.indices, self.indices_ppm, self.sample_name, self.mtlist, self.printlabel, self.Settings)
+		self.content = Values(temp_values, self.indices, self.indices_ppm, self.sample_name, self.mtlist, self.duplet_ppm, self.printlabel, self.Settings)
 
 	def fn_plot(self, second = [], text="",save=''):
 		import numpy as np
@@ -262,19 +349,21 @@ class Chunk(object):
 ########################################################################################################################
 
 class Values(object): # prob gonna reorder the chunk class to a more definit way of handling it
-	def __init__(self, values, peak_ind, peak_ind_ppm, sample_name, mtlist, printlabel, Settings):
+	def __init__(self, values, peak_ind, peak_ind_ppm, sample_name, mtlist, duplet_ppm, printlabel, Settings):
 		#set all parameters given for backup
 		self.data = values 		#self.data now is a list of lists
 		self.peak_ind = peak_ind
 		self.peak_ind_ppm = peak_ind_ppm
 		self.sample_name = sample_name
 		self.mtlist = mtlist
+		self.duplet_ppm = duplet_ppm
 		self.printlabel = printlabel
 		self.Settings = Settings
 
 
 		#import GUI printer
 		from GUI_mainframe import update_GUI
+		import numpy as np
 		update_GUI(format("Fitting curves on chunk of %s..." %self.sample_name), self.printlabel)
 
 		self.content = []		#self.content will become a list of curves
@@ -283,8 +372,37 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 			temp_curve = Curve(self.data[x], self.peak_ind_ppm[x], self.mtlist, self.Settings)
 			if temp_curve.ok:
 				self.content.append(temp_curve)
+
+		# DUPLET FILETERING HERE
+		if self.Settings["gp_duplet_filtering"]:
+			temp = []
+			for z in range(len(self.content)-1):
+				x = self.content[z]		# curve 1
+				y = self.content[z+1]	# curve 2
+				if (abs(x.ppm - y.ppm) < self.duplet_ppm) and (x.fn_compare(y) > 0.4) and (not x.duplet):
+					x.duplet = True
+					y.duplet = True
+					temp.append(Curve(np.array(x.data)+np.array(y.data), (x.ppm + y.ppm)/2, self.mtlist, self.Settings))
+				elif not x.duplet:
+					temp.append(x)
+			if not self.content[len(self.content)-1].duplet:
+				temp.append(self.content[len(self.content)-1])
+			self.content = temp
+
+		self.fn_normalise()
 		if self.Settings["plot_values"]:
 			self.fn_plot()
+
+	def fn_normalise(self):
+		import numpy as np
+		#get max value
+		temp_max = 0
+		for x in self.content:
+			if np.max(x.data) > temp_max:
+				temp_max = np.max(x.data)
+		#devide by max
+		for x in self.content:
+			x.data = x.data/temp_max
 
 	def fn_plot(self):
 		import matplotlib.pyplot as plt
@@ -357,6 +475,7 @@ class Curve(object): #use to collect all the information on each peak
 		self.ok = (mean(self.data)) != 0. and trapz(self.data) > 0.2
 		self.alpha = (self.ppm > 4.25) #and (self.data.max() > 0.3)
 		self.rico = fn_rico(self.data, mtlist)
+		self.duplet = False
 
 	def fn_compare(self, second):
 		import numpy as np
@@ -507,8 +626,8 @@ if __name__ == "__main__":
 	#data.fn_plot(["a-Galactopyr.", "b-Arabinopyr."])
 
 
-	test = Experiment(r"D:\DATA\master2016\SAMPLES\32\pdata\1", "testing")
-	print(test.chunks[0].max_curve)
+	test = Experiment(r"D:\DATA\master2016\Test_500_3d\3\pdata\1", "testing")
+	#print(test.chunks[0].max_curve)
 	#comp = test.chunks[0].fn_compare(data)
 	#comp = test.chunks[5].fn_compare(data)
 

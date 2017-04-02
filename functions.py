@@ -111,20 +111,21 @@ def fn_rico (list, vclist):
 
 
 #filter to be applied on peak index and chunk_max BEFORE INTEGRATION
-def fn_noise_filter(chunk_peak_ind, chunk_max):
+def fn_noise_filter(chunk_peak_ind, chunk_max, factor=1):
 	import numpy as np
 	max = np.max(chunk_max)
+	chunk_max = np.array(chunk_max) / max
 	noise_list = []
 	for x in chunk_peak_ind:
 		if chunk_max[x] < 0.005:
 			noise_list.append(chunk_max[x])
 			noise_list.append(-chunk_max[x])
-	limit = np.std(noise_list)*3
+	limit = np.std(noise_list)*3*factor
 	temp = []
 	for x in chunk_peak_ind:
 		if chunk_max[x] > limit:
 			temp.append(x)
-	return temp, limit
+	return temp, limit*max
 
 #alternate integral way
 def fn_alt_integrals(max_curve):
@@ -196,14 +197,18 @@ def fn_fqlist(dir, B0_hz):
 				fqlist_ppm.append(float(fqlist_file[x]) / B0_hz)
 	return fqlist, fqlist_ppm
 
-def fn_parameters(dic, dic2, dic3):
+def fn_parameters(dic, dic2, dic3, pp):
 	B0_hz = float(dic2[dic2.find(r'$SFO1=') + 7:dic2.find('##$SFO2')])
-	# SO1_hz = float(dic2[dic2.find(r'$O1=') + 5:dic2.find('##$O2')])
 	SW_hz = float(dic['procs']['SW_p'])
-	SW_ppm = SW_hz / B0_hz / 2
+	SW2_hz = float(dic3[dic3.find(r'$SW_h=')+ 7 :][:dic3[dic3.find(r'$SW_h=')+7:].find("\n")])
+	SW_ppm = SW_hz / B0_hz
 	duplet_ppm = 15 / B0_hz  # from Karplus
 	chunk_num = int(int(dic3[dic3.find(r'$TD=')+5:][:dic3[dic3.find(r'$TD=')+5:].find("\n")])/13)
-	return B0_hz, SW_ppm, SW_hz, duplet_ppm, chunk_num
+	if pp == "dipsigpphzsbs":
+		SW2_ppm = SW2_hz / B0_hz
+		return B0_hz, SW_ppm, SW2_ppm, SW_hz, duplet_ppm, chunk_num
+	else:
+		return B0_hz, SW_ppm, SW_hz, duplet_ppm, chunk_num
 
 def fn_max_curve(chunk):
 	import numpy as np
@@ -220,29 +225,25 @@ def fn_unique(list):
 	
 
 #calculate the integration curves
-def fn_integrate_new(chunk, chunk_integrals, chunk_peak_ind, SW_ppm):
+def fn_integrate_new(chunk, chunk_integrals, chunk_peak_ind, SW_ppm, SO1, pp):
 	import numpy as np
 	chunk_values = []
 	chunk_peak_ind_ppm = []
 	for y in range(len(chunk_peak_ind)):  # loop over all indices
 		x = chunk_peak_ind[y]
-		chunk_peak_ind_ppm.append((len(chunk[0]) - x) / len(chunk[0]) * SW_ppm)  # ppm calculation of the integral
+		chunk_peak_ind_ppm.append((len(chunk[0]) - x) / len(chunk[0]) * SW_ppm + SO1 -0.5*SW_ppm)
 		temp = []
 		for row in chunk:
 			temp.append(np.trapz(row[chunk_integrals[y][0]:chunk_integrals[y][1]]))
 		chunk_values.append(temp)
-	# normalise per chunk
-	chunk_values = chunk_values / np.max(chunk_values)
 	
 	#filter out the bad ones
 	remove = []
 	for x in range(len(chunk_peak_ind)):
 		#different filter conditions
-		if np.max(chunk_values[x]) < 0.015:
+		if np.max(chunk_values[x]) < 0.01:
 			remove.append(x)
-			
-			
-			
+
 	remove = sorted(fn_unique(remove), reverse=True)
 	for x in remove:
 		chunk_values = np.delete(chunk_values,x,axis=0)
@@ -367,6 +368,35 @@ def fn_cluster_analysis(data):
 	res = getNewick(tree, "", tree.dist, title)
 	print(res)
 
+def fn_p3d_reform(data):
+	data_new = []
+	for x in range(13):
+		data_new.append([])
+		for x in range(len(data)):
+			data_new[len(data_new) - 1].append([])
+	for f1 in range(len(data)):
+		for f2 in range(13):
+			f3 = data[f1][f2]
+			data_new[f2][f1] = f3
+	return data_new
+
+# takes the diagonal from a 2d TOCSY
+def fn_p3d_diagonal(data, SW_ppm, SW2_ppm, SO1_ppm):
+	diag = []
+	len1 = len(data[0])
+	len2 = len(data)
+	for x in range(len(data)):
+		temp_ppm = (len2 - x) / len2 * SW2_ppm + SO1_ppm - 0.5 * SW2_ppm
+		diag.append(data[x][int((SO1_ppm - temp_ppm - 0.5 * SW_ppm) / SW_ppm * len1 + len1)])
+	import matplotlib.pyplot as plt
+	plt.figure()
+	ax = plt.subplot()
+	plt.plot(diag)
+	ax.set_ylabel("Intensity (rel.)")
+	ax.set_xlabel("Data point")
+	plt.show()
+	return diag
+
 # get the settings from the config
 def fn_settings():
 	Settings = {}
@@ -377,6 +407,7 @@ def fn_settings():
 	Settings["plot_exp"] = config.plot_exp
 	Settings["plot_chunk"] = config.plot_chunk
 	Settings["plot_values"] = config.plot_values
+	Settings["plot_diagonal"] = config.plot_diagonal
 
 	Settings["am_norm"] = config.am_norm
 	Settings["am_int"] = config.am_int
@@ -384,6 +415,8 @@ def fn_settings():
 	Settings["gp_chunks"] = config.gp_chunks
 	Settings["gp_chunks_list"] = []
 	Settings["gp_print"] = config.gp_print
+	Settings["gp_threshold"] = config.gp_threshold
+	Settings["gp_duplet_filtering"] = config.gp_duplet_filtering
 
 	#GUI settings - not in config
 	Settings["Background"] = "blue"
