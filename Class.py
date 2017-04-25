@@ -70,9 +70,9 @@ class Experiment(object):
 		self.dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
 		self.dic3 = open(dir[:dir.find('pdata')] + r'\acqu2s', 'r').read()
 
-		self.B0_hz, self.SW_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num = fn_parameters(self.dic, self.dic2, self.dic3, self.pp)
+		self.B0_hz, self.SW_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num, self.offset = fn_parameters(self.dic, self.dic2, self.dic3, self.pp)
 		self.SW_ppm = 0.5*self.SW_ppm
-		self.SO1_ppm = 0.5*self.SW_ppm
+		self.SO1_ppm = 0.5*self.SW_ppm - self.offset
 
 		# collect the lists
 		self.vclist = fn_vclist(dir)
@@ -125,7 +125,7 @@ class Experiment(object):
 	def init_dipsigpphzsbs(self, dir, printlabel):
 		import nmrglue as ng
 		import numpy as np
-		from functions import fn_check_dir, fn_p3d_reform, fn_p3d_diagonal, fn_noise_filter
+		from functions import fn_check_dir, fn_p3d_reform, fn_p3d_diagonal, fn_noise_filter, index_from_ppm, ppm_from_index
 		from GUI_mainframe import update_GUI
 
 		self.dic, self.data = ng.bruker.read_pdata(dir)
@@ -137,9 +137,9 @@ class Experiment(object):
 		from functions import fn_vclist, fn_parameters, fn_read_title
 		self.dic2 = open(dir[:dir.find('pdata')] + r'\acqus', 'r').read()
 		self.dic3 = open(dir[:dir.find('pdata')] + r'\acqu2s', 'r').read()
-		self.B0_hz, self.SW_ppm, self.SW2_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num = fn_parameters(self.dic, self.dic2, self.dic3, self.pp)
+		self.B0_hz, self.SW_ppm, self.SW2_ppm, self.SW_hz, self.duplet_ppm, self.chunk_num, self.offset = fn_parameters(self.dic, self.dic2, self.dic3, self.pp)
 		# extra parameter
-		self.SO1_ppm = float(self.dic2[self.dic2.find(r'$O1=') + 5:][:self.dic2[self.dic2.find(r'$O1=')+5:].find("\n")])/self.B0_hz
+		self.SO1_ppm = float(self.dic2[self.dic2.find(r'$O1=') + 5:][:self.dic2[self.dic2.find(r'$O1=')+5:].find("\n")])/self.B0_hz - self.offset
 
 		# collect the lists
 		self.vclist = fn_vclist(dir)
@@ -169,7 +169,7 @@ class Experiment(object):
 
 		# remove the H2O peak
 		len2 = len(self.data[0])
-		h2p_ind = int((self.SO1_ppm - (2353/self.B0_hz) - 0.5 * self.SW2_ppm) / self.SW2_ppm * len2 + len2)
+		h2p_ind = index_from_ppm(4.79, self.SO1_ppm, self.SW2_ppm, len2)
 		for z in range(len(duplet_ind_new)):
 			x = duplet_ind_new[z]
 			if (abs(h2p_ind - x) < 10/1024*len2):
@@ -229,10 +229,13 @@ class Experiment(object):
 			else:
 				temp_list2 = temp_list
 		elif type(temp_list) == str:
-			temp_list = temp_list.split(",")
-			temp_list2 = []
-			for x in temp_list:
-				temp_list2.append(int(x))
+			if "range" in temp_list:
+				temp_list2 = range(int(temp_list[temp_list.find(",")-1]),int(temp_list[temp_list.find(",")+2]))
+			else:
+				temp_list = temp_list.split(",")
+				temp_list2 = []
+				for x in temp_list:
+					temp_list2.append(int(x))
 		else:
 			self.status = False
 		comparison = []
@@ -251,52 +254,41 @@ class Experiment(object):
 #chunk class
 class Chunk(object):
 	def __init__(self, chunk_data, title, chunk_fq, SW_ppm, duplet_ppm, mtlist, SO1_ppm, pp, printlabel, Settings):
+		self.Settings = Settings
+
 		self.data = chunk_data
 		self.sample_name = title
 		self.chunk_fq = chunk_fq
-		self.SW_ppm = SW_ppm
-		self.duplet_ppm = duplet_ppm
+		self.Settings["SW_ppm"] = SW_ppm
+		self.Settings["duplet_ppm"] = duplet_ppm
 		self.mtlist = mtlist
-		self.SO1_ppm = SO1_ppm
+		self.Settings["SO1_ppm"] = SO1_ppm
 		self.pp = pp
 		self.printlabel = printlabel
-		self.Settings = Settings
 
 
 		#import required functions
 		import numpy as np
 		#import peakutils as pk
 		from detect_peaks import detect_peaks
-		from functions import fn_max_curve, fn_noise_filter, fn_integrals, fn_integrate_new
+		from functions import fn_max_curve, fn_noise_filter, fn_integrals, fn_integrate
 
 		#find the max curve
 		self.max_curve = fn_max_curve(self.data)
-		print(self.max_curve)
 
-		if self.Settings["am_int"]:
-			#from scipy.integrate import cumtrapz
-			#temp = cumtrapz(self.max_curve)
-			# use a min hight filter
-			from functions import fn_alt_integrals
-			self.integrals, self.indices, self.noise = fn_alt_integrals(self.max_curve)
-			print("woepsie; turn off alternate method: integrals please")
+		#set general settigns
+		self.Settings["res"] = len(self.max_curve)
 
-
-
-		if not self.Settings["am_int"]:
-			#calculate the peaks	chunk_peak_ind = pk.indexes(self.max_curve, thres = 0.0)
-			temp_indices = detect_peaks(self.max_curve,show=False)
-
-			# remove super low peaks (background noise)
-			self.indices, self.noise = fn_noise_filter(temp_indices, self.max_curve)
-
-			#find the integral limits
-			self.integrals, self.indices = fn_integrals(self.max_curve, self.indices, self.noise)
+		#find the integral limits
+		self.integrals, self.indices, Settings["noise"] = fn_integrals(self.max_curve, Settings["am_norm"], Settings["gp_splitter"])
 
 		#calculate the integral values
-		temp_values, self.integrals, self.indices, self.indices_ppm = fn_integrate_new(self.data, self.integrals, self.indices, self.SW_ppm, self.SO1_ppm, self.pp)
+		temp_values, self.integrals, self.indices = fn_integrate(self.data, self.integrals, self.indices, self.Settings["SW_ppm"], self.Settings["SO1_ppm"], self.pp)
 		#set the content using the Values class
-		self.content = Values(temp_values, self.indices, self.indices_ppm, self.sample_name, self.mtlist, self.duplet_ppm, self.printlabel, self.Settings)
+		self.content = Values(temp_values, self.integrals, self.max_curve, self.sample_name, self.mtlist, self.chunk_fq, self.printlabel, self.Settings)
+
+		if self.Settings["plot_integration"]:
+			self.fn_plot_int()
 
 	def fn_plot(self, second = [], text="",save=''):
 		import numpy as np
@@ -310,13 +302,12 @@ class Chunk(object):
 		import matplotlib.pyplot as plt
 		plt.figure()
 		ax = plt.subplot()
-		bord = [0,1]
 		for x in range(len(chunk_list)):
 			for y in range(len(chunk_list[x].content.content)):
 				if y == 0:
-					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x], label=chunk_list[x].sample_name)
+					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "y-"][x], label=chunk_list[x].sample_name)
 				else:
-					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "o-"][x])
+					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "y-"][x])
 		plt.xlim(0.007,0.113)
 		if text != "":
 			plt.text(0.1,0.8,text, fontsize=15)
@@ -327,6 +318,34 @@ class Chunk(object):
 			plt.savefig(save)
 		else:
 			plt.show()
+
+	def fn_plot_int(self):
+		# plots the integration curve
+		import matplotlib.pyplot as plt
+		plt.figure()
+		ax = plt.subplot()
+		ax.set_title(self.sample_name)
+		temp = []
+		temp_max_curve = []
+		for x in range(len(self.max_curve)-1):
+			temp.append(0)
+			temp.append(0)
+			temp_max_curve.append(self.max_curve[x])
+			temp_max_curve.append(0.5*self.max_curve[x]+0.5* self.max_curve[x+1])
+		for x in self.content.content:
+			temp_limit = x.index
+			for x in range(2*temp_limit[0], 2*temp_limit[1]+1):
+				if temp[x]==1:
+					temp[x] = 0.5
+				else:
+					temp[x] =1
+		plt.plot(temp_max_curve, label="Projection curve")
+		plt.plot(temp, label="Integral Filter")
+
+		ax.set_ylabel("Intensity (rel.)")
+		ax.set_xlabel("Double Data #")
+		plt.legend()
+		plt.show()
 
 	def fn_compare(self, database, sort=True):
 		comparison = []
@@ -349,14 +368,14 @@ class Chunk(object):
 ########################################################################################################################
 
 class Values(object): # prob gonna reorder the chunk class to a more definit way of handling it
-	def __init__(self, values, peak_ind, peak_ind_ppm, sample_name, mtlist, duplet_ppm, printlabel, Settings):
+	def __init__(self, values, peak_ind, max_curve, sample_name, mtlist, chunk_fq, printlabel, Settings):
 		#set all parameters given for backup
 		self.data = values 		#self.data now is a list of lists
 		self.peak_ind = peak_ind
-		self.peak_ind_ppm = peak_ind_ppm
+		self.max_curve = max_curve
 		self.sample_name = sample_name
 		self.mtlist = mtlist
-		self.duplet_ppm = duplet_ppm
+		self.chunk_fq = chunk_fq
 		self.printlabel = printlabel
 		self.Settings = Settings
 
@@ -367,29 +386,28 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 		update_GUI(format("Fitting curves on chunk of %s..." %self.sample_name), self.printlabel)
 
 		self.content = []		#self.content will become a list of curves
-		#split up the values into different curves
+		# split up the values into different curves
 		for x in range(len(self.data)):
-			temp_curve = Curve(self.data[x], self.peak_ind_ppm[x], self.mtlist, self.Settings)
+			temp_curve = Curve(self.data[x], self.peak_ind[x], self.max_curve[self.peak_ind[x][0]:self.peak_ind[x][1]], self.mtlist, self.Settings)
 			if temp_curve.ok:
 				self.content.append(temp_curve)
 
-		# DUPLET FILETERING HERE
+		# sort the curves (shouldnt be required)
+		self.content.sort(key=lambda x: x.index[0])
+
+		# duplet and triplet filtering
 		if self.Settings["gp_duplet_filtering"]:
-			temp = []
-			for z in range(len(self.content)-1):
-				x = self.content[z]		# curve 1
-				y = self.content[z+1]	# curve 2
-				if (abs(x.ppm - y.ppm) < self.duplet_ppm) and (x.fn_compare(y) > 0.4) and (not x.duplet):
-					x.duplet = True
-					y.duplet = True
-					temp.append(Curve(np.array(x.data)+np.array(y.data), (x.ppm + y.ppm)/2, self.mtlist, self.Settings))
-				elif not x.duplet:
-					temp.append(x)
-			if not self.content[len(self.content)-1].duplet:
-				temp.append(self.content[len(self.content)-1])
-			self.content = temp
+			# triplet filtering
+			self.content = self.fn_triplet_cluster()
+			# quadruplet filtering
+			self.content = self.fn_quadruplet()
+			# duplet filtering
+			self.content = self.fn_duplet()
+			# baseline filter
+			#self.content = self.fn_baseline()
 
 		self.fn_normalise()
+		self.fn_curve_filter()
 		if self.Settings["plot_values"]:
 			self.fn_plot()
 
@@ -403,6 +421,139 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 		#devide by max
 		for x in self.content:
 			x.data = x.data/temp_max
+
+
+	# filtering of individual curves
+	def fn_curve_filter(self):
+		import numpy as np
+		remove = []
+		for y in range(len(self.content)):
+			x = self.content[y]
+			# minimum filter
+			if np.max(x.data) < 0.005:
+				remove.append(y)
+			# ppm filter (left)
+			elif x.ppm > (self.chunk_fq + self.Settings["duplet_ppm"]):
+				remove.append(y)
+			# h2o peak filter
+			elif abs(x.ppm - 4.79) < 0.01:
+				remove.append(y)
+			# high ppm low intensity filter
+			elif x.ppm > 4.5 and np.max(x.data) < 0.3:
+				remove.append(y)
+
+		unique = []
+		[unique.append(item) for item in remove if item not in unique]
+		remove = sorted(unique, reverse=True)
+		for x in remove:
+			self.content.pop(x)
+
+	def fn_duplet(self):
+		import numpy as np
+		temp = []
+		if (len(self.content) > 1):
+			for z in range(len(self.content) - 1):
+				x = self.content[z]
+				y = self.content[z + 1]
+				if not x.triplet and not y.triplet and not x.duplet and not x.quadruplet and not y.quadruplet:
+					temp_duplet = x.fn_duplet(y, self.Settings["duplet_ppm"])
+					if temp_duplet or (x.alpha and y.alpha and (abs(x.ppm - y.ppm) < 0.15)):
+						x = Curve(np.array(x.data) + np.array(y.data), [x.index[0], y.index[1]], x.max_curve + y.max_curve, self.mtlist, self.Settings, ppm=(x.ppm + y.ppm)/2, duplet_ppm = abs((x.ppm - y.ppm)))
+						x.duplet = True
+						y.duplet = True
+					temp.append(x)
+				else:
+					if not x.duplet:
+						temp.append(x)  # keep the x curve in case of triplet
+
+			# ad the last one if not a duplet
+			if not y.duplet:
+				temp.append(y)
+			return temp
+		else: return self.content
+
+	def fn_quadruplet(self):
+		import numpy as np
+		temp = []
+		for z in range(len(self.content) - 3):
+			x = self.content[z]
+			y = self.content[z + 1]
+			u = self.content[z + 2]
+			v = self.content[z + 3]
+			triplet = x.triplet or y.triplet or u.triplet or v.triplet
+			duplets = x.fn_duplet(y, self.Settings["duplet_ppm"]) and u.fn_duplet(v, self.Settings["duplet_ppm"]) and y.fn_duplet(u, self.Settings["duplet_ppm"]*1.2)
+			eq_dist = (abs(u.ppm - y.ppm) < 0.1) and (abs(abs(v.ppm - u.ppm) - abs(x.ppm - y.ppm)) < 0.0060)
+			if not triplet and not x.quadruplet:
+				if duplets and eq_dist:
+					x.quadruplet = True
+					x = (Curve(np.array(x.data) + np.array(y.data) + np.array(u.data) + np.array(v.data), [x.index[0], v.index[1]],  x.max_curve + y.max_curve + u.max_curve + v.max_curve, self.mtlist, self.Settings, ppm=(y.ppm + u.ppm)/2))
+					x.quadruplet = True
+					y.quadruplet = True
+					u.quadruplet = True
+					v.quadruplet = True
+				temp.append(x)
+			else:
+				if not x.quadruplet:
+					temp.append(x)
+		if len(self.content) < 4:
+			temp = self.content
+		else:
+			if not y.quadruplet:
+				temp.append(y)
+			if not u.quadruplet:
+				temp.append(u)
+			if not v.quadruplet:
+				temp.append(v)
+		return temp
+
+	def fn_triplet_cluster(self):
+		import numpy as np
+		found = True
+		cluster, triplets, temp = [], [], []
+		for z in range(1, len(self.content)-1):
+			cluster.append(self.content[z-1].fn_triplet(self.content[z], self.content[z+1], self.Settings["duplet_ppm"]))
+		if not cluster: found = False
+		while found and max(cluster):
+			index = (np.where(cluster == (np.array(cluster)).max()))[0][0]
+			if cluster[index]:
+				for x in [-2,-1,0,1,2]:
+					if 0 <= (index + x) <= (len(cluster)-1):
+						cluster[index + x] = 0
+				x = self.content[index]
+				y = self.content[index + 1]
+				u = self.content[index + 2]
+				x.triplet = True
+				y.triplet = True
+				u.triplet = True
+				x = Curve(np.array(x.data) + np.array(y.data) + np.array(u.data), [x.index[0], u.index[1]], x.max_curve + y.max_curve + u.max_curve, self.mtlist, self.Settings)
+				x.triplet = True
+				temp.append(x)
+			else:
+				found = False
+		# add all peaks not part of a triplet
+		for x in self.content:
+			if not x.triplet:
+				temp.append(x)
+		temp.sort(key=lambda x: x.ppm, reverse=True)
+		return temp
+
+	def fn_baseline(self):
+		import numpy as np
+		temp = []
+		for z in range(len(self.content) - 1):
+			x = self.content[z]
+			y = self.content[z + 1]
+			if not x.baseline_corr:
+				if abs(x.index[1] - y.index[0]) < 2 and x.max_curve[len(x.max_curve)-1] > self.Settings["noise"]*2 and y.max_curve[0] > self.Settings["noise"]*2:
+					x.baseline_corr = True
+					y.baseline_corr = True
+					x = Curve(np.array(x.data) + np.array(y.data), [x.index[0], y.index[1]], x.max_curve + y.max_curve,self.mtlist, self.Settings, ppm=(x.ppm + y.ppm) / 2, duplet_ppm=abs((x.ppm - y.ppm)))
+					x.baseline_corr = True
+				temp.append(x)
+		if not y.baseline_corr:
+			temp.append(y)
+		return temp
+
 
 	def fn_plot(self):
 		import matplotlib.pyplot as plt
@@ -422,6 +573,7 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 	def fn_compare(self, second):
 		from copy import deepcopy
 		from numpy import trapz
+
 		if len(self.content) <= len(second.content):
 			list1_c = deepcopy(self.content)
 			list2_c = deepcopy(second.content)
@@ -438,7 +590,8 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 			best = -1.
 			best_curve = 0.
 			for curve2 in list2_c:
-				temp = curve1.fn_compare(curve2)
+				temp = 0.8*curve1.fn_compare(curve2,norm=True) + 0.2*curve1.fn_compare(curve2)
+
 				if temp > best:
 					best = temp
 					best_curve = curve2
@@ -449,7 +602,7 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 		# punish for the remaining curves
 		tot = 1
 		for x in list2_c:
-			tot += trapz(x.data)
+			tot += 3*trapz(x.data)
 		return CCF / tot
 
 
@@ -459,36 +612,72 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 ########################################################################################################################
 
 class Curve(object): #use to collect all the information on each peak
-	def __init__(self, curve, temp_ppm, mtlist, Settings):
+	def __init__(self, curve, index, max_curve, mtlist, Settings, ppm=0, duplet_ppm = 0):
 		#info directly given from the Values
 		self.data = curve
-		self.ppm = temp_ppm
+		self.index = index
+		self.max_curve = max_curve
 		self.mtlist = mtlist
 		self.Settings = Settings
 
-		from numpy import trapz
+		from numpy import trapz, where
 
 		#calculate required information which is different
-		from functions import fn_rico
+		from functions import fn_rico, ppm_from_index
 		from numpy import mean, trapz
+		if ppm == 0:
+			self.ppm = ppm_from_index(self.index[0]+where(self.max_curve==max(max_curve))[0][0], self.Settings["SO1_ppm"], self.Settings["SW_ppm"], self.Settings["res"])
+		else:
+			self.ppm = ppm
+		if duplet_ppm == 0:
+			self.duplet_ppm = 0
+		else:
+			self.duplet_ppm = duplet_ppm
 		self.size = trapz(self.data)
-		self.ok = (mean(self.data)) != 0. and trapz(self.data) > 0.2
-		self.alpha = (self.ppm > 4.25) #and (self.data.max() > 0.3)
+		self.ok = (mean(self.data)) != 0. and trapz(self.data) > 0.1
+		if self.ppm > 4 and (max(self.max_curve) < 0.3): self.ok = False
+		self.alpha = (self.ppm > 4) and (max(self.max_curve) > 0.3)
 		self.rico = fn_rico(self.data, mtlist)
 		self.duplet = False
+		self.triplet = False
+		self.quadruplet = False
+		self.baseline_corr = False
 
-	def fn_compare(self, second):
+	def fn_duplet(curve1, curve2, duplet_ppm):
+		if (abs(curve1.ppm - curve2.ppm) < duplet_ppm) and (curve1.fn_compare(curve2) > 0.35):
+			return True
+		else:
+			return False
+
+	def fn_triplet(curve1, curve2, curve3, duplet_ppm):
+		quadruplet = curve1.quadruplet or curve2.quadruplet or curve3.quadruplet
+		duplet = curve1.duplet or curve2.duplet or curve3.duplet
+		similar = min([curve1.fn_compare(curve2), curve1.fn_compare(curve3)]) > 0.3 and min([curve2.fn_compare(curve1,norm=True), curve2.fn_compare(curve3,norm=True)]) > 0.5
+		if (abs(curve1.ppm - curve2.ppm) < duplet_ppm) and (abs(curve2.ppm - curve3.ppm) < duplet_ppm) and (abs(abs(curve2.ppm - curve3.ppm) - abs(curve1.ppm - curve2.ppm)) < 0.004) and not quadruplet and not duplet and similar:
+			odd = 1
+		else:
+			odd = 0
+		comp = min([curve1.fn_compare(curve2), curve1.fn_compare(curve3)])
+		comp_norm = min([curve2.fn_compare(curve1,norm=True), curve2.fn_compare(curve3,norm=True)])
+		return odd*comp*comp_norm/abs(abs(curve2.ppm - curve3.ppm) - abs(curve1.ppm - curve2.ppm))
+
+	def fn_compare(self, second, norm = False):
 		import numpy as np
 		import math
+		data1 = self.data
+		data2 = second.data
+		if norm:
+			data1 = np.array(data1)/np.max(data1)
+			data2 = np.array(data2)/np.max(data2)
 		# here you can play with the diff types of correlations
 		if self.Settings["am_norm"]:
 			# use the Frechet distance instead of the normal curve
 			from functions import fn_frechet
-			corr = (fn_frechet(self.data, second.data, self.mtlist))
+			corr = (fn_frechet(data1, data2, self.mtlist))
 
 		else:
-			maxi = max(np.trapz(np.abs(self.data)), np.trapz(np.abs(second.data)))
-			corr = np.trapz(np.abs(np.array(self.data) - np.array(second.data))) / maxi
+			maxi = max(np.trapz(np.abs(data1)), np.trapz(np.abs(data2)))
+			corr = np.trapz(np.abs(np.array(data1) - np.array(data2))) / maxi
 		if math.isnan(corr) or corr < 0.0000002:
 			corr = 0.0
 		if corr > 1.0:
@@ -523,7 +712,6 @@ class Database(object):
 		from pickle import load
 		from functions import fn_check_dir
 		from GUI_mainframe import update_GUI
-
 		if (fn_check_dir(self.dir, r"\Database.p")):
 			self.content = load(open(self.dir + r"\Database.p", "rb"))
 			update_GUI("Loaded the Database from given location.", self.printlabel)
@@ -624,15 +812,16 @@ if __name__ == "__main__":
 	data = Database(Database_Directory, "testing", fn_settings())
 	#data.fn_plot(["a-L_Rhamnopyr.","b-Ribofur.","b-Ribofur."])
 	#data.fn_plot(["a-Galactopyr.", "b-Arabinopyr."])
+	print(len(data.content))
 
-
-	test = Experiment(r"D:\DATA\master2016\Test_500_3d\3\pdata\1", "testing")
+	#test = Experiment(r"D:\DATA\master2016\Test_500_3d\3\pdata\1", "testing")
+	#test = Experiment(r"D:\DATA\master2016\Samples\32\pdata\1","testing")
 	#print(test.chunks[0].max_curve)
 	#comp = test.chunks[0].fn_compare(data)
 	#comp = test.chunks[5].fn_compare(data)
 
 
-	if False:	#perform cluster analysis
+	if True:	#perform cluster analysis
 		from functions import fn_cluster_analysis
 		fn_cluster_analysis(data)
 

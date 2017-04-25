@@ -166,17 +166,17 @@ class app_tk(tk.Tk):
 		check.grid(column=3, row=13, columnspan=1, sticky="EW")
 
 		self.checkbox_label_text = tk.StringVar()
-		self.checkbox_label_text.set("(Uses Frechet method for curve comparison; default is ON.)")
+		self.checkbox_label_text.set("(Uses Fréchet method for curve comparison.)")
 		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
 		label.grid(column=4, row=13, columnspan=2, sticky="EW")
 
-		self.am_int = tk.BooleanVar()
-		check = tk.Checkbutton(self, text="Alternate CIM", variable=self.am_int, onvalue=True, offvalue=False, command=self.fn_am_int, anchor="w")
-		if Settings["am_int"]: check.toggle()
+		self.plot_integration = tk.BooleanVar()
+		check = tk.Checkbutton(self, text="Integration limits", variable=self.plot_integration, onvalue=True, offvalue=False, command=self.fn_plot_integration, anchor="w")
+		if Settings["plot_integration"]: check.toggle()
 		check.grid(column=3, row=14, columnspan=1, sticky="EW")
 
 		self.checkbox_label_text = tk.StringVar()
-		self.checkbox_label_text.set("(Not operational - GUI framework)")
+		self.checkbox_label_text.set("(Shows the integration limits in a double data plot)")
 		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
 		label.grid(column=4, row=14, columnspan=2, sticky="EW")
 
@@ -209,6 +209,7 @@ class app_tk(tk.Tk):
 		else:
 			update_GUI("Ready to read experiment data...\nDon't forget to reload experiment!!!",self.printlabel)
 		self.check_exp_status()
+		self.change_exp_status("orange")
 		self.entry.focus_set()
 		self.entry.selection_adjust(0)
 
@@ -236,7 +237,6 @@ class app_tk(tk.Tk):
 			if Settings["plot_exp"] and self.status_exp == "green":
 				self.experiment.fn_plot()
 			if Settings["plot_chunk"] and len(self.comparison) != 0:
-				print(Settings["gp_chunks_list"])
 				for x in range(len(self.comparison)):
 					#create chunk list for plotting
 					temp_list = []
@@ -246,6 +246,9 @@ class app_tk(tk.Tk):
 			if Settings["plot_values"] and self.status_exp == "green":
 				for x in self.experiment.chunks:
 					x.content.fn_plot()
+			if Settings["plot_integration"] and self.status_exp == "green":
+				for x in self.experiment.chunks:
+					x.fn_plot_int()
 		else:
 			update_GUI("Can't do replotting without the experiment loaded.", self.printlabel)
 
@@ -259,8 +262,8 @@ class app_tk(tk.Tk):
 		Settings["plot_values"] = self.plot_values_check.get()
 	def fn_am_ccm(self):
 		Settings["am_norm"] = self.am_ccm.get()
-	def fn_am_int(self):
-		Settings["am_int"] = self.am_int.get()
+	def fn_plot_integration(self):
+		Settings["plot_integration"] = self.plot_integration.get()
 	def fn_gp_chunks(self):
 		Settings["gp_chunks"] = self.gp_chunk.get()
 
@@ -319,7 +322,7 @@ class app_tk(tk.Tk):
 
 	def experiment_compare(self):
 		from Class import Experiment
-		if self.status_exp == self.status_data == "green" and type(self.experiment) == Experiment:
+		if self.status_exp == self.status_data == "green" and type(self.experiment) == Experiment and Settings["gp_duplet_filtering"]:
 			if Settings["gp_chunks"]:
 				from tkinter import simpledialog
 				Settings["gp_chunks_list"] = simpledialog.askstring("Custom chunks","Required Chunks?", initialvalue=str(Settings["gp_chunks_list"]).replace("[", "").replace("]", ""), parent=self)
@@ -333,7 +336,10 @@ class app_tk(tk.Tk):
 			text = fn_result_printer(self.comparison, Settings["gp_print"])
 			update_GUI(text, self.printlabel)
 		else:
-			update_GUI("Cannot run database comparison without Green status.\nPlease ensure both experiment and Database are loaded.", self.printlabel)
+			if not Settings["gp_duplet_filtering"]:
+				update_GUI("Cannot run database comparison without Green status.\nPlease ensure both experiment and Database are loaded.", self.printlabel)
+			else:
+				update_GUI("Please enable duplet filtering in the config file.\nthe database only supports duplet filtering enabled data.", self.printlabel)
 
 
 

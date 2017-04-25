@@ -82,7 +82,7 @@ Always check the clustering to see if other monosaccharides could be a sollution
 
 ## Authors
 
-* **Yannick Dandois** 	- *Master student* 	- [UGent github](https://github.ugent.be/ydandois) / [Github.com](https://github.com/FramedYannick)
+* **Y. Dandois** 	- *Master student* 	- [UGent github](https://github.ugent.be/ydandois) / [Github.com](https://github.com/FramedYannick)
 * **J.C. Martins** 		- *Promotor* 		- [UGent biblio](https://biblio.ugent.be/person/801000687646)
 * **P. Dawyndt** 		- *Copromotor* 		- [UGent biblio](http://www.twist.ugent.be/index.php?page=personeel&ugentid=801001355633)
 

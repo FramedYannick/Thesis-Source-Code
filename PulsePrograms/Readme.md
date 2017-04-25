@@ -86,13 +86,12 @@ At the end of the loops; the following calculations must be made:
 ```
 F1PH(calph(ph1, -90), caldel(d0, +in0))
 F2QF(calclist(vc,1))
-
 ```
 Creating the indirect dimension (increment the delay) and the mixing dimension.
 
 ### Setup an experiment
 
-Every step of the p2D experiment for the power levels and pulse durations is the same.
+Every step of the p2D experiment for the power levels and pulse durations is identical for the p3D experiment.
 The dimensions of the experiment however; are different: TD = (2k/4k, 13, 64/128).
 The spectral window in the f1 dimension must be as small as possible; depending of the used selective peak.
 In the f3 dimension; the chemical shift of the entire spectrum must be included.
@@ -107,3 +106,5 @@ Using the standard processing commands; one must process the data in the f3 dime
 tf3 xdim; tf1; tf3p; tf1p; tabs1; tabs3
 ```
 It can be benificial to process a single plane of the p3D experiment using xfb (in the 1-3 plane with high mixing times) to determine the optimal phase and baseline correction.
+For more information; please inspect the Bruker Topspin Processing manual; in the 3D-processing commands chapter.
+This should be executed before the tf3 command, as it will use the stored phase parameter.
