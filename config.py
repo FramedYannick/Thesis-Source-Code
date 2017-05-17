@@ -13,12 +13,12 @@ Database_Directory = r"D:\DATA\master2016\DATABASE"				# Compile the database wi
 plot_exp = False					# will plot each chunk next to each other to show which chunks are noisy
 plot_chunk = False					# plot the chunk with its determined sacharide in the database
 plot_values = False					# will plot each chunk on different plot with ppm's given to each curve
-plot_diagonal = False				# plot the diagonal with peaks?
-plot_integration = False			# should only be used for debugging purpoces
+plot_diagonal = True				# plot the diagonal with peaks?
+plot_integration = True			# should only be used for debugging purpoces
 
 	#Alternate methods
 am_norm = False						# switches between the frechet method and normal method
-am_int = True						# switches between the rel. hight integration and the minima integration
+am_min = False						# switches between the minima comparison and product
 
 
 

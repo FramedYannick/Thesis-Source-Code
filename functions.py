@@ -5,7 +5,7 @@ designed by Dandois for saving all the seperate small functions
 """
 
 # find the required integrals on a curve; given the peaks
-def fn_integrals(chunk_max, am_int, gp_splitter):
+def fn_integrals(chunk_max, Settings):
 	import numpy as np
 	from detect_peaks import detect_peaks
 	# remove super low peaks (background noise)
@@ -73,24 +73,26 @@ def fn_integrals(chunk_max, am_int, gp_splitter):
 		integral_limits.pop(x)
 
 	# split them up
-	if gp_splitter != 0.:
+	if Settings["gp_splitter"] != 0. and Settings["gp_duplet_filtering"]:
 		new_integral_limits = []
-		new_peak_ind = []
+		new_peaks_ind = []
 		for counter in range(len(integral_limits)):
 			temp = integral_limits[counter]
 			temp_indices_rev = np.array(detect_peaks(chunk_max[temp[0]:temp[1]], show=False, valley=True)) + temp[0]
 			if temp[0] < 3250 < temp[1]:
 				import matplotlib.pyplot as plt
 			for y in temp_indices_rev:
-				if chunk_max[y] < gp_splitter * chunk_max[peaks_ind[counter]]:
+				if chunk_max[y] < Settings["gp_splitter"] * chunk_max[peaks_ind[counter]]:
 					new_integral_limits.append([temp[0], y])
-					new_peak_ind.append((temp[0] + y) / 2)
+					new_peaks_ind.append((temp[0] + y) / 2)
 					temp[0] = y
 			# find the index of the closest number to the x
 			new_integral_limits.append(temp)
-			new_peak_ind.append((temp[0] + temp[1]) / 2)
+			new_peaks_ind.append((temp[0] + temp[1]) / 2)
+		integral_limits = new_integral_limits
+		peaks_ind = new_peaks_ind
 
-	return new_integral_limits, new_peak_ind, chunk_noise
+	return integral_limits, peaks_ind, chunk_noise
 
 
 #calculate the rico between the first and last point
@@ -108,7 +110,7 @@ def fn_noise_filter(chunk_peak_ind, chunk_max, factor=1):
 		if chunk_max[x] < 0.005:
 			noise_list.append(chunk_max[x])
 			noise_list.append(-chunk_max[x])
-	limit = np.std(noise_list)*3*factor
+	limit = np.std(noise_list)*1*factor
 	temp = []
 	for x in chunk_peak_ind:
 		if chunk_max[x] > limit:
@@ -133,7 +135,11 @@ def fn_alt_integrals(max_curve):
 			peaks_ind.append(np.mean(new_limit))
 	return integral_limits, peaks_ind, limit
 
-
+def fn_product(list):
+	x = 1
+	for y in list:
+		x = x*y
+	return x
 
 
 #function for reading the title file
@@ -265,7 +271,7 @@ def fn_frechet(list1, list2, mtlist):
 			res = val
 	if res == 0.:
 		res = 0.000000000001
-	return res*4#/max(list1+list2)
+	return res*2#/max(list1+list2)
 
 #file checker
 def fn_check_dir(dir,file):
@@ -354,6 +360,10 @@ def fn_cluster_analysis(data):
 	tree = hca.to_tree(a, False)
 	res = getNewick(tree, "", tree.dist, title)
 	print(res)
+	for x in matrix:
+		for y in x:
+			print(y)
+	return matrix
 
 def fn_p3d_reform(data):
 	data_new = []
@@ -406,7 +416,7 @@ def fn_settings():
 	Settings["plot_integration"] = config.plot_integration
 
 	Settings["am_norm"] = config.am_norm
-	Settings["am_int"] = config.am_int
+	Settings["am_min"] = config.am_min
 
 	Settings["gp_chunks"] = config.gp_chunks
 	Settings["gp_chunks_list"] = []

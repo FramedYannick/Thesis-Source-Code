@@ -32,7 +32,7 @@ For the processing software, you also have two options; you can download the pre
 Upon downloading the raw code; please make sure you have all dependencies present on your computer.
 The **.exe** file is the easiest way for end users to use.
 
-## Use the 2d-sel TOCSY Matching a.k.a. SELMA
+## Use the sel TOCSY Matching
 
 The GUI design was made to be simple; in general it consists of two steps:
 
@@ -40,7 +40,7 @@ The GUI design was made to be simple; in general it consists of two steps:
 To get a database; two steps can be taken:
 * Load a database - *You can load a database from a given location; using the browse button*
 ```
-To load; just use the browse button to go to the correct location. If the status turns blue; you have a loadable database file present; just cluck the **Load** button.
+To load; just use the browse button to go to the correct location. If the status turns blue; you have a loadable database file present; just click the **Load** button.
 ```
 * Compile your own database - *You can compile your own database*
 ```
@@ -48,6 +48,7 @@ To compile your database; browse to a folder which contains your sacharides. The
 It will prompt you to override the current database if one is present.
 ```
 **The database will only load experiments who end on a 2 as a number; and will load the 1st processing data.**
+**If a number 3 is present (such as 22 and 23), 23 will be seen as an update to 22 and 23 will be loaded instead.**
 
 #### Get a green experiment status
 This can be done by browsing to your experiments processed folder location. Ensure the **SAMPLES.txt** file is present and you will get a blue status.
@@ -56,7 +57,7 @@ Once your status is blue; you can press the load button.
 ### Running the Database comparison
 If both your experiment and database status labels are green; you can run the database search.
 If you only want the search to be executed on specific chunks; please set it under the quick settings. A message box will appear to ask which chunks it should integrate.
-The numbers should be seperated by commas; and may not be higher then the highest chunk. An example is given below:
+The numbers should be seperated by commas; and may not be higher then the highest chunk. An example is given below (please remember, computers count from 0):
 ```
 1,2,5
 ```
@@ -65,14 +66,14 @@ Please remember that the GUI might be *Non responding* during the search; this i
 
 ## The given output
 
-For a sucrose sample; using the Fréchet-method; the given output will be:
+For a sucrose sample; using the standard integration method; the given output will be:
 
 ```
             Results:
 -----------------------------------
-    0: 0.615 a-Glucopyr.
-    0: 0.223 a-Xylopyr.
-    0: 0.215 b-Arabinopyr.
+    0: 0.581 a-Glucopyr.
+    0: 0.507 a-Xylopyr.
+    0: 0.158 b-Arabinopyr.
 -----------------------------------
 ```
 

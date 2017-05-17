@@ -22,7 +22,7 @@ class Experiment(object):
 			if "seldigpzs2d" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
 				self.pp = "seldigpzs2d"
 				self.init_seldigpzs2d(self.dir, self.printlabel)
-			elif "dipsigpphzsbs" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
+			elif "dipsigpphzs" in open(dir[:dir.find('pdata')] + r"\pulseprogram", "r").readlines()[0]:
 				self.pp = "dipsigpphzsbs"
 				self.init_dipsigpphzsbs(self.dir, self.printlabel)
 		else:
@@ -152,7 +152,9 @@ class Experiment(object):
 		self.diag = fn_p3d_diagonal(self.data[0], self.SW_ppm, self.SW2_ppm, self.SO1_ppm)
 		from detect_peaks import detect_peaks
 		self.ind_diag = detect_peaks(self.diag, show=self.Settings["plot_diagonal"], mph=self.Settings["gp_threshold"])
-		self.ind_diag, limit = fn_noise_filter(self.ind_diag, self.diag, 5)
+		print(len(self.ind_diag))
+		self.ind_diag, limit = fn_noise_filter(self.ind_diag, self.diag, 2)
+		print(len(self.ind_diag))
 
 		# find duplets on the diagonal; must be averaged index & recombine
 		duplet_ind = int(self.duplet_ppm/self.SW2_ppm*len(self.data[0]))
@@ -280,7 +282,7 @@ class Chunk(object):
 		self.Settings["res"] = len(self.max_curve)
 
 		#find the integral limits
-		self.integrals, self.indices, Settings["noise"] = fn_integrals(self.max_curve, Settings["am_norm"], Settings["gp_splitter"])
+		self.integrals, self.indices, Settings["noise"] = fn_integrals(self.max_curve, Settings)
 
 		#calculate the integral values
 		temp_values, self.integrals, self.indices = fn_integrate(self.data, self.integrals, self.indices, self.Settings["SW_ppm"], self.Settings["SO1_ppm"], self.pp)
@@ -305,9 +307,9 @@ class Chunk(object):
 		for x in range(len(chunk_list)):
 			for y in range(len(chunk_list[x].content.content)):
 				if y == 0:
-					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "y-"][x], label=chunk_list[x].sample_name)
+					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "y-","r-"][x], label=chunk_list[x].sample_name)
 				else:
-					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "y-"][x])
+					plt.plot(self.mtlist,(np.array(chunk_list[x].content.content[y].data)+x*0.001), ["r-", "g-", "b-", "y-","r-"][x])
 		plt.xlim(0.007,0.113)
 		if text != "":
 			plt.text(0.1,0.8,text, fontsize=15)
@@ -581,7 +583,7 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 			list1_c = deepcopy(second.content)
 			list2_c = deepcopy(self.content)
 
-		CCF = 1.
+		CCF = []
 		# sort list1 on importance
 		list1_c.sort(key=lambda x: x.size, reverse=True)
 		# find best comparable curve and save the data
@@ -597,12 +599,18 @@ class Values(object): # prob gonna reorder the chunk class to a more definit way
 					best_curve = curve2
 			if best_curve != 0.:
 				list2_c.remove(best_curve)
-				CCF *= best
+				CCF.append(best)
+				#CCF.append(abs(corrcoef(curve1.data,curve2.data)[0][1]))
 			else: print('error')
 		# punish for the remaining curves
+		from functions import fn_product
+		if self.Settings["am_min"]:
+			CCF = min(CCF)
+		else:
+			CCF = fn_product(CCF)
 		tot = 1
 		for x in list2_c:
-			tot += 3*trapz(x.data)
+			tot += 5*trapz(x.data)
 		return CCF / tot
 
 
@@ -652,13 +660,19 @@ class Curve(object): #use to collect all the information on each peak
 	def fn_triplet(curve1, curve2, curve3, duplet_ppm):
 		quadruplet = curve1.quadruplet or curve2.quadruplet or curve3.quadruplet
 		duplet = curve1.duplet or curve2.duplet or curve3.duplet
-		similar = min([curve1.fn_compare(curve2), curve1.fn_compare(curve3)]) > 0.3 and min([curve2.fn_compare(curve1,norm=True), curve2.fn_compare(curve3,norm=True)]) > 0.5
-		if (abs(curve1.ppm - curve2.ppm) < duplet_ppm) and (abs(curve2.ppm - curve3.ppm) < duplet_ppm) and (abs(abs(curve2.ppm - curve3.ppm) - abs(curve1.ppm - curve2.ppm)) < 0.004) and not quadruplet and not duplet and similar:
+		similar = min([curve1.fn_compare(curve2), curve1.fn_compare(curve3)]) > 0.3 and \
+				  min([curve2.fn_compare(curve1, norm=True), curve2.fn_compare(curve3, norm=True)]) > 0.5
+		if (abs(curve1.ppm - curve2.ppm) < 1.5*duplet_ppm) and (abs(curve2.ppm - curve3.ppm) < 1.5*duplet_ppm) and (abs(abs(curve2.ppm - curve3.ppm) - abs(curve1.ppm - curve2.ppm)) < 0.004) and not quadruplet and not duplet and similar:
 			odd = 1
 		else:
 			odd = 0
+			print([curve1.index[0] + curve1.index[1], curve3.index[0] + curve3.index[1]],
+				  ([curve1.fn_compare(curve2), curve1.fn_compare(curve3)]),
+				  [curve2.fn_compare(curve1, norm=True), curve2.fn_compare(curve3, norm=True)])
+
 		comp = min([curve1.fn_compare(curve2), curve1.fn_compare(curve3)])
 		comp_norm = min([curve2.fn_compare(curve1,norm=True), curve2.fn_compare(curve3,norm=True)])
+		print(comp, comp_norm)
 		return odd*comp*comp_norm/abs(abs(curve2.ppm - curve3.ppm) - abs(curve1.ppm - curve2.ppm))
 
 	def fn_compare(self, second, norm = False):
@@ -812,7 +826,6 @@ if __name__ == "__main__":
 	data = Database(Database_Directory, "testing", fn_settings())
 	#data.fn_plot(["a-L_Rhamnopyr.","b-Ribofur.","b-Ribofur."])
 	#data.fn_plot(["a-Galactopyr.", "b-Arabinopyr."])
-	print(len(data.content))
 
 	#test = Experiment(r"D:\DATA\master2016\Test_500_3d\3\pdata\1", "testing")
 	#test = Experiment(r"D:\DATA\master2016\Samples\32\pdata\1","testing")
@@ -821,9 +834,20 @@ if __name__ == "__main__":
 	#comp = test.chunks[5].fn_compare(data)
 
 
-	if True:	#perform cluster analysis
+	if False:	#perform cluster analysis
 		from functions import fn_cluster_analysis
-		fn_cluster_analysis(data)
+		import numpy as np
+		matrix = fn_cluster_analysis(data)
+		print(np.mean(matrix))
+
+	if True:
+		lister = []
+		for x in data.content:
+			if x.sample_name in ["a-L_Arabinopyr.","b-L_Arabinofur."]:
+				lister.append(x)
+				x.content.fn_plot()
+		lister[0].fn_plot(lister[1:])
+
 
 	#function to compare katelijne data - still need DTW
 	if False:
@@ -853,3 +877,20 @@ if __name__ == "__main__":
 
 				x.fn_plot()
 				x.content.fn_plot()
+
+	#standard deviation
+	if False:
+		data = []
+		for x in [2,12,22,32,42]:
+			data.append(Experiment(r"D:\DATA\master2016\Standard Deviation Exp\\" + str(x) + r"\pdata\1", "testing").chunks[0])
+		data[0].fn_plot(data[1:])
+		matrix = []
+		for x in data:
+			matrix.append([])
+			for y in data:
+				matrix[len(matrix)-1].append(x.content.fn_compare(y.content))
+			print(matrix[len(matrix)-1])
+
+		import numpy as np
+		print(np.mean(matrix))
+		print(np.std(matrix))

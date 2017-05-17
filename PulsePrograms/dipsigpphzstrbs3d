@@ -1,4 +1,4 @@
-;dipsigpphzstrbs3d
+;dipsigpphzstrbs3d v0.0.1
 ;avance-version (10/12/07)
 ;2D homonuclear Hartman-Hahn transfer using 
 ;   DIPSI2 sequence for mixing
@@ -150,15 +150,17 @@ ph31=0 2 2 0
 
 ;pl0 : 0W
 ;pl1 : f1 channel - power level for pulse (default)
-;pl10: f1 channel - power level for TOCSY-spinlock
-;sp2: f1 channel - shaped pulse
-;sp29: f1 channel - shaped pulse (adiabatic)
-;p1 : f1 channel -  90 degree high power pulse
-;p6 : f1 channel -  90 degree low power pulse
-;p12: f1 channel - 180 degree shaped pulse
+;pl10: CALCULATE - power level for TOCSY-spinlock
+;sp2: CALCULATE - shaped pulse
+;spnam2: Default Reburp.1000
+;sp29: CALCULATE - shaped pulse (adiabatic)
+;spnam29: DefaultCrp60,20,20.10
+;p1 : DETERMINE -  90 degree high power pulse
+;p6 : Spin lock 90 degree low power pulse [25µs]
+;p12: sel 180 degree shaped pulse - selgpse [7.5ms]
 ;p16: homospoil/gradient pulse                       [1 msec]
-;p17: trimming pulse    [0.5 msec]
-;p32: f1 channel - 180 degree shaped pulse (adiabatic)    [20 msec]
+;p17: trimming pulse    [2.5 msec]
+;p32: Adiabatic 180 degree shaped pulse    [20 msec]
 ;     smoothed chirp (sweepwidth, 20% smoothing, 10000 points)
 ;p34: f1 channel - 180 degree shaped pulse (adiabatic)    [15 msec]
 ;     smoothed chirp (sweepwidth, 20% smoothing, 10000 points)

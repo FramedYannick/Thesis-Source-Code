@@ -45,7 +45,7 @@ In Topspin; you must change the amount of dimensions to two.
 
 ### Setup an experiment
 
-In general; you must set P6; PLW10; SPW2 AND SPW29 for each new sample (all are dependent of the 90° pulse):
+In general; you must set P1; P6; PLW10; SPW2 AND SPW29 for each new sample (all are dependent of the 90° pulse):
 p6 is the length of the low power pulse; used for the DIPSI sequence; to ensure compatibility with the database; set it to 25µs.
 PLW10 is the power level corresponding to p6. It can be calculated using the 'calcpowlev' command in topspin.
 
@@ -69,6 +69,7 @@ xf2 xdim; apk2d; abs2
 ```
 
 However; due to the harder phasing upon using the experiment on multiple frequencies; it might be beneficial to do the phasing manually.
+Identical to the phasing, optimal results will be achieved if one uses the manual base correction.
 
 ## How to use the p3D Band Selective TOCSY
 
@@ -106,5 +107,5 @@ Using the standard processing commands; one must process the data in the f3 dime
 tf3 xdim; tf1; tf3p; tf1p; tabs1; tabs3
 ```
 It can be benificial to process a single plane of the p3D experiment using xfb (in the 1-3 plane with high mixing times) to determine the optimal phase and baseline correction.
-For more information; please inspect the Bruker Topspin Processing manual; in the 3D-processing commands chapter.
-This should be executed before the tf3 command, as it will use the stored phase parameter.
+For more information; please inspect the Bruker Topspin Processing manual in the 3D-processing commands chapter.
+This should be done before the tf3 command, as it will use the stored phase parameter.

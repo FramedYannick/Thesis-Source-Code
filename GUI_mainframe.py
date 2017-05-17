@@ -170,13 +170,13 @@ class app_tk(tk.Tk):
 		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
 		label.grid(column=4, row=13, columnspan=2, sticky="EW")
 
-		self.plot_integration = tk.BooleanVar()
-		check = tk.Checkbutton(self, text="Integration limits", variable=self.plot_integration, onvalue=True, offvalue=False, command=self.fn_plot_integration, anchor="w")
-		if Settings["plot_integration"]: check.toggle()
+		self.am_min = tk.BooleanVar()
+		check = tk.Checkbutton(self, text="Minimum criterion", variable=self.am_min, onvalue=True, offvalue=False, command=self.fn_am_min, anchor="w")
+		if Settings["am_min"]: check.toggle()
 		check.grid(column=3, row=14, columnspan=1, sticky="EW")
 
 		self.checkbox_label_text = tk.StringVar()
-		self.checkbox_label_text.set("(Shows the integration limits in a double data plot)")
+		self.checkbox_label_text.set("(Uses minima instead of product criterion)")
 		label = tk.Label(self, textvariable=self.checkbox_label_text, anchor="w")
 		label.grid(column=4, row=14, columnspan=2, sticky="EW")
 
@@ -262,8 +262,8 @@ class app_tk(tk.Tk):
 		Settings["plot_values"] = self.plot_values_check.get()
 	def fn_am_ccm(self):
 		Settings["am_norm"] = self.am_ccm.get()
-	def fn_plot_integration(self):
-		Settings["plot_integration"] = self.plot_integration.get()
+	def fn_am_min(self):
+		Settings["am_min"] = self.am_min.get()
 	def fn_gp_chunks(self):
 		Settings["gp_chunks"] = self.gp_chunk.get()
 
@@ -322,7 +322,7 @@ class app_tk(tk.Tk):
 
 	def experiment_compare(self):
 		from Class import Experiment
-		if self.status_exp == self.status_data == "green" and type(self.experiment) == Experiment and Settings["gp_duplet_filtering"]:
+		if self.status_exp == self.status_data == "green" and type(self.experiment) == Experiment:
 			if Settings["gp_chunks"]:
 				from tkinter import simpledialog
 				Settings["gp_chunks_list"] = simpledialog.askstring("Custom chunks","Required Chunks?", initialvalue=str(Settings["gp_chunks_list"]).replace("[", "").replace("]", ""), parent=self)
@@ -336,7 +336,7 @@ class app_tk(tk.Tk):
 			text = fn_result_printer(self.comparison, Settings["gp_print"])
 			update_GUI(text, self.printlabel)
 		else:
-			if not Settings["gp_duplet_filtering"]:
+			if Settings["gp_duplet_filtering"]:
 				update_GUI("Cannot run database comparison without Green status.\nPlease ensure both experiment and Database are loaded.", self.printlabel)
 			else:
 				update_GUI("Please enable duplet filtering in the config file.\nthe database only supports duplet filtering enabled data.", self.printlabel)
