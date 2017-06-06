@@ -2,7 +2,7 @@
 ### Setup the p2D-sel TOCSY pulse program (DOWNLOAD AVAILABLE)
 
 The experiment is based on the 1D-selTOCSY; where we vary the mixing time in every scan creating a second dimension.
-For the analysis of multiple sacharides in one sample; a second loop was included to change the frequency of the selective peak and place it on the H1-region.
+For the analysis of multiple saccharides in one sample; a second loop was included to change the frequency of the selective peak and place it on the H1-region.
 The code can be found in the pulse program file.
 
 A DIPSI-version of the 1D-sel TOCSY pulse program was used to enable zero-quantum filtering and cleaning up the spectra.
@@ -32,13 +32,13 @@ was changed into:
 ```
 to write the data and increase the variable counter list and make td1 times the scan.
 
-Next; we must ensure we all use the same mixing times; therefor; you must create a vclist with the content:
+Next; we must ensure we all use the same mixing times; therefore; you must create a vclist with the content:
 ```
 3 6 9 12 15 18 21 24 27 30 33 36 39
 ```
 If you use a file to store the vclist; you MUST put each number on a new line!
 
-The p6 duration must be set to **25.000µs and the O1 parameter must be set to 0ppm.
+The p6 duration must be set to **25.000µs** and the O1 parameter must be set to 0ppm.
 This will mean the half of your spectra is useless; however this is needed to ensure a correct selective pulse. Keep this in mind when choosing the TD in the f2 dimension.
 
 In Topspin; you must change the amount of dimensions to two.
@@ -49,10 +49,15 @@ In general; you must set P1; P6; PLW10; SPW2 AND SPW29 for each new sample (all 
 p6 is the length of the low power pulse; used for the DIPSI sequence; to ensure compatibility with the database; set it to 25µs.
 PLW10 is the power level corresponding to p6. It can be calculated using the 'calcpowlev' command in topspin.
 
-For the selective pulse; one can test the optimal results in a 1D proton experiment; however during our setup; a 180 refocussing pulse was always used.
+For the selective pulse; one can test the optimal results in a 1D proton experiment; however during our setup a 180 refocusing pulse was always used.
+The goal of selectivity for the p2D experiment is to select a SINGLE anomeric hydrogen resonance peak!
 The length of this pulse (p12) must be set to achieve optimal selectivity (1/p12 equals to the selectivity).
-The shape tool must be used to integrate the used shape; and analysis will determine the powerlevel that must be set (SPW2 = corr + PLW1).
+The shape tool must be used to integrate the used shape in order to calculate the correct power level.
+Use the resulted power to determine the power level that must be set (SPW2 = corr + PLW1).
 The same can be repeated for the adiabatic pulse of 20msec (Crp60,20,20.10); although one must use 'integrate shape (adiabatic)' for integration.
+
+As the O1 parameter has been set to 0ppm, the spectral window must be set accordingly (twice the size of what one would normally take for the direct dimension).
+In the indirect dimension the SW is not of application.
 
 One must also set the TD; this will be thirteen times the amount of frequencies you want to measure.
 In the fqlist; you must set all frequencies that you want to measure; however you must enter each frequency THIRTEEN times!
@@ -93,9 +98,11 @@ Creating the indirect dimension (increment the delay) and the mixing dimension.
 ### Setup an experiment
 
 Every step of the p2D experiment for the power levels and pulse durations is identical for the p3D experiment.
+Do note that the O1 from the p3D experiment must not be set to 0ppm but to the frequency that the selective pulse is required.
+This selective pulse should excite the entire anomeric region.
 The dimensions of the experiment however; are different: TD = (2k/4k, 13, 64/128).
 The spectral window in the f1 dimension must be as small as possible; depending of the used selective peak.
-In the f3 dimension; the chemical shift of the entire spectrum must be included.
+In the f3 dimension; the chemical shift of the entire spectrum must be included, please set a correct spectral window.
 
 ###Process an experiment
 

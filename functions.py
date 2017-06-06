@@ -212,6 +212,14 @@ def fn_max_curve(chunk):
 	for x in np.array(chunk).T:
 		chunk_max.append(np.max(x))
 	return chunk_max
+
+def fn_sum_curve(chunk):
+	import numpy as np
+	data = np.array(chunk[0])
+	for x in chunk[1:]:
+		data += (np.array(x))
+	data = data/max(data)
+	return data
 	
 #make an unique version of a list
 def fn_unique(list):
@@ -335,7 +343,7 @@ def fn_cluster_analysis(data):
 		for q in range(len(comp)):
 			y = comp[q]
 			temp.append(y[0])
-			if (0.99 > y[0] > 0.5) and z < q and True:
+			if (0.99 > y[0] > 0.7) and z < q and True:
 				print(y[0])
 				x.fn_plot(y[1], r"$\delta$: " + str(round(y[0],2)), format("C:/Users/yannick/Documents/_Documenten/UGent/Thesis/Statistics/Cluster analysis/Frechet/%s.png" %(x.sample_name.replace(".","") +" - " + y[1].sample_name.replace(".",""))))
 			if z != q and y[0] == 1.0:

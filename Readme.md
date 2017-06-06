@@ -1,6 +1,6 @@
 # Towards a more general approach for the identification of saccharides.
 
-This Master thesis aims to create a fast and easy usable way to identify sacharides using NMR spectroscopy.
+This Master thesis aims to create a fast and easy usable way to identify saccharides using NMR spectroscopy.
 This was done by altering the 1D-selTOCSY pulse program to create a 2D-selTOCSY using the mixing time as a second variable.
 We have included the option to use this on multiple frequencies in one experiment; for an even easier analysis.
 
@@ -18,17 +18,17 @@ NMRGlue			-	https://www.nmrglue.com/
 Numpy			-	https://www.numpy.org/
 Scipy			-	https://www.scipy.org/
 ```
-NMRGlue has many dependencies; upon installing this all required modules are present. It is adviced to check their tutorial.
+NMRGlue has many dependencies; upon installing this all required modules are present. It is advised to check their tutorial.
 If you are using the packaged version; no python modules are needed at all.
 
 ### Installing
 
-There are two different pulse programs available; one as an array of 1D-sel TOCSY's using the DIPSI spin lock sequence; called the p2D-sel TOCSY. This is used for non complex mixtures where the anomeric peaks are well seperated. The measurement time is dependant on the amount of monosaccharides; and the setting up is more extended.
+There are two different pulse programs available; one as an array of 1D-sel TOCSY's using the DIPSI spin lock sequence; called the p2D-sel TOCSY. This is used for non complex mixtures where the anomeric peaks are well separated. The measurement time is dependent on the amount of monosaccharides and setting it up is more extended.
 However, in general this is the fastest measurement method in case of limited measurement time.
-The second pulse program; a band selective 3D-TOCSY, has longer measurement time; but is much better to seperate the anomeric signals.
-Both pulse programs with more explenation can be found [here](https://github.ugent.be/ydandois/Thesis-Source-Code/tree/master/PulsePrograms).
+The second pulse program; a band selective 3D-TOCSY, has longer measurement time; but is much better to seperete the anomeric signals.
+Both pulse programs with more explanation can be found [here](https://github.ugent.be/ydandois/Thesis-Source-Code/tree/master/PulsePrograms).
 
-For the processing software, you also have two options; you can download the prepackaged file from the github (just under 200MB) or you can download the raw code (not recommended).
+For the processing software, you also have two options; you can download the prepackaged file from the GitHub (just under 200MB) or you can download the raw code (not recommended).
 Upon downloading the raw code; please make sure you have all dependencies present on your computer.
 The **.exe** file is the easiest way for end users to use.
 
@@ -57,7 +57,7 @@ Once your status is blue; you can press the load button.
 ### Running the Database comparison
 If both your experiment and database status labels are green; you can run the database search.
 If you only want the search to be executed on specific chunks; please set it under the quick settings. A message box will appear to ask which chunks it should integrate.
-The numbers should be seperated by commas; and may not be higher then the highest chunk. An example is given below (please remember, computers count from 0):
+The numbers should be separated by commas; and may not be higher than the highest chunk. An example is given below (please remember, computers count from 0):
 ```
 1,2,5
 ```
@@ -77,9 +77,9 @@ For a sucrose sample; using the standard integration method; the given output wi
 -----------------------------------
 ```
 
-The closer the value is to 1.0; the better the match. 1.0 means an identical match of the sacharide. Please keep in mind that this is a calculated value; and errors might occur during integration.
+The closer the value is to 1.0; the better the match. 1.0 means an identical match of the saccharide. Please keep in mind that this is a calculated value; and errors might occur during integration.
 Always use the Chunk plot to double check the curves; to ensure the correctness of your results.
-Always check the clustering to see if other monosaccharides could be a sollution as well!
+Always check the clustering to see if other monosaccharides could be a solution as well!
 
 ## Authors
 
